@@ -7,7 +7,7 @@ using System.IO;
 
 namespace Printing_Multiplexer
 {
-    abstract class BasicModule
+    public abstract class BasicModule
     {
         // TODO Add naming or other chaining information as part of the module connection subsystem.
         public OutputCollection Outputs;

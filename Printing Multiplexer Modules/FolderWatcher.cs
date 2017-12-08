@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Printing_Multiplexer
 {
-    class FolderWatcher : BasicModule
+    public class FolderWatcher : BasicModule
     {
         const string NextModule = "NextModule";
 

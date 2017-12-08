@@ -19,8 +19,8 @@
             <Label>
                 Folder To Watch
             </Label>
-            <TextBox IsEnabled="False" Text="(Choose folder)" />
-            <Button>
+            <TextBox Name="InputFolderTextBox" IsEnabled="False" Text="(Choose folder)" />
+            <Button Name="InputFolderButton" Click="InputFolderButton_Click">
                 Choose Folder...
             </Button>
             <Separator />

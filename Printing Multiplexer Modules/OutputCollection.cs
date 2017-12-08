@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Printing_Multiplexer
 {
-    class OutputCollection
+    public class OutputCollection
     {
         string[] keys;
         Dictionary<string, BasicModule> outputs = new Dictionary<string, BasicModule>();
