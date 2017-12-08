@@ -58,10 +58,15 @@ namespace Image_Reviewer
         private void nextImage()
         {
             // Get the next image in a different thread, in case the queue is empty.
+            /*
             Task.Run(() =>
            {
                ImagePreview.Source = imageReviewer.NextImage();
            });
+           */
+
+            // For testing, let's just do it synchronously. Let's suppose we only press the button once there's an image ready.
+            ImagePreview.Source = imageReviewer.NextImage();
         }
     }
 }

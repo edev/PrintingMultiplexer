@@ -19,7 +19,7 @@ namespace Printing_Multiplexer_Modules
 
         public override void Give(FileInfo file)
         {
-            files.Enqueue(file);
+            enqueue(file);
         }
 
         // Dequeue the next file, if one exists, and load it as the Source of destination. If the queue is empty, wait for the signal.
@@ -44,6 +44,8 @@ namespace Printing_Multiplexer_Modules
 
                     // Load the image.
                     bitmap.BeginInit();
+                    // Cache it on load so we can safely move, delete, and so on.
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
                     bitmap.UriSource = new Uri(file.FullName);
                     bitmap.EndInit();
 
