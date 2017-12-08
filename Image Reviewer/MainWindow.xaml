@@ -5,8 +5,55 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Image_Reviewer"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
+        Title="Image Reviewer" Height="600" Width="880">
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition Width="180" />
+        </Grid.ColumnDefinitions>
         
+        <Image Grid.Column="0" Grid.Row="0" />
+
+        <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,10">
+            <!-- FolderWatcher Path -->
+            <Label>
+                Folder To Watch
+            </Label>
+            <TextBox IsEnabled="False" Text="(Choose folder)" />
+            <Button>
+                Choose Folder...
+            </Button>
+            <Separator />
+            
+            <!-- ImageReviewer Paths -->
+            <Label>
+                Accept Folder
+            </Label>
+            <TextBox IsEnabled="False" />
+            <Button>
+                Choose Folder...
+            </Button>
+            
+            <Label>
+                Reject Folder
+            </Label>
+            <TextBox IsEnabled="False" />
+            <Button>
+                Choose Folder...
+            </Button>
+            <Separator />
+            
+            <!-- ImageReviewer Actions -->
+            <Button>
+                Accept
+            </Button>
+            <Button>
+                Reject
+            </Button>
+        </StackPanel>
+
+
     </Grid>
+
+    
 </Window>
