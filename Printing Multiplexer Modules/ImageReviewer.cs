@@ -10,12 +10,18 @@ using System.Windows.Media.Imaging;
 
 namespace Printing_Multiplexer_Modules
 {
+    public delegate void NextImageCallback (ImageSource source);
+
     public class ImageReviewer : BasicModule
     {
-        Queue<FileInfo> files = new Queue<FileInfo>();
+        // This lock protects ALL private member fields.
         SpinLock fileLock = new SpinLock();
-        ManualResetEvent signal = new ManualResetEvent(false);
-        Thread queueProcessor;
+        Queue<FileInfo> files = new Queue<FileInfo>();
+        NextImageCallback nextImageCallback = null;
+        FileInfo fileUnderReview = null;
+
+        // ManualResetEvent signal = new ManualResetEvent(false);
+        // Thread queueProcessor;
 
         public override void Give(FileInfo file)
         {
@@ -23,6 +29,7 @@ namespace Printing_Multiplexer_Modules
         }
 
         // Dequeue the next file, if one exists, and load it as the Source of destination. If the queue is empty, wait for the signal.
+        /*
         public BitmapImage NextImage()
         {
             FileInfo file = null;
@@ -77,6 +84,94 @@ namespace Printing_Multiplexer_Modules
             signal.Set();
 
             fileLock.Exit();
+        }
+        */
+
+        public ImageSource NextImage(NextImageCallback callback)
+        {
+            ImageSource returnValue = null;
+            bool gotLock = false;
+            while (!gotLock) fileLock.Enter(ref gotLock);
+
+            // We have the lock.
+
+            // Clear any saved callbacks; this request overrides them.
+            nextImageCallback = null;
+
+            if (files.Count > 0)
+            {
+                // Great! We can dequeue.
+
+                FileInfo file;
+
+                // Get the next file to process.
+                file = files.Dequeue();
+
+                // Save the file so we have it when the decision to accept/reject comes back.
+                fileUnderReview = file;
+                fileLock.Exit();
+
+                // Load the image, AFTER exiting.
+                returnValue = makeImage(file);
+
+            }
+            else
+            {
+                // Nothing to dequeue. Save a callback.
+
+                nextImageCallback = callback;
+                fileLock.Exit();
+
+                // And clear the current saved file.
+                fileUnderReview = null;
+            }
+            return returnValue;
+        }
+
+        private void enqueue(FileInfo file)
+        {
+            bool gotLock = false;
+            while (!gotLock) fileLock.Enter(ref gotLock);
+
+            // We have the lock.
+
+            if (nextImageCallback != null)
+            {
+                // Someone's waiting. Hand the image straight to them.
+
+                // First, let's take care of the work that must be locked.
+                // We'll save a copy of the callback and clear the shared memory.
+                NextImageCallback callback = nextImageCallback;
+                nextImageCallback = null;
+
+                // Save the file since it's being reviewed.
+                fileUnderReview = file;
+
+                // Now, we can unlock before doing the slower work.
+                fileLock.Exit();
+
+                // Now we do the real work: make a new BitmapImage and pass it on.
+                callback(makeImage(file));                
+            }
+            else
+            {
+                // Just add it to the queue.
+                files.Enqueue(file);
+                fileLock.Exit();
+            }
+        }
+
+        private BitmapImage makeImage(FileInfo file)
+        {
+            if (file == null) return null;
+
+            BitmapImage bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            // Cache it on load so we can safely move, delete, and so on.
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.UriSource = new Uri(file.FullName);
+            bitmap.EndInit();
+            return bitmap;
         }
     }
 }

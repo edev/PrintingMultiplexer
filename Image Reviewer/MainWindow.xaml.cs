@@ -66,7 +66,14 @@ namespace Image_Reviewer
            */
 
             // For testing, let's just do it synchronously. Let's suppose we only press the button once there's an image ready.
-            ImagePreview.Source = imageReviewer.NextImage();
+            // ImagePreview.Source = imageReviewer.NextImage();
+            ImagePreview.Source = imageReviewer.NextImage(nextImageCallback);
+        }
+
+        // Callback function 
+        private void nextImageCallback(ImageSource source)
+        {
+            ImagePreview.Source = source;
         }
     }
 }
