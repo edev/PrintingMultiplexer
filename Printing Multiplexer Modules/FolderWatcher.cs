@@ -26,7 +26,7 @@ namespace Printing_Multiplexer
             fsw.Changed += new FileSystemEventHandler(OnChanged);
         }
 
-        public override void Give(string path)
+        public override void Give(FileInfo file)
         {
             // TODO Figure out what, if anything, to do with items given to FolderWatcher.
         }
@@ -81,7 +81,7 @@ namespace Printing_Multiplexer
             }
 
             // File is READY!
-            Outputs.GetOutput(NextModule)?.Give(e.FullPath);
+            Outputs.GetOutput(NextModule)?.Give(f);
         }
 
         // Copied and lightly modified from:
