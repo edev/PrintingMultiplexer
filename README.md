@@ -27,3 +27,21 @@ The next goal is to refine the basic modules, with a paritcular focus on expandi
 The tertiary future goal is to expand the selection of modules available, such as adding modules for reviewing alternate file types ranging from other image types (e.g. Canon, Nikon, and Sony RAW files, if possible) to non-image file types (with appropriate embedded previews).
 
 Finally, an implicit and ongoing goal is to make the project more idiomatic as the author becomes more familiar with C#, WPF, VS2017, and so on - including a comprehensive battery of tests.
+
+## Limitations
+
+Current limitations include (but are not limited to):
+
+- Renaming files from outside the application, while they're being processed through a workflow, will probably break things or cause an application crash.
+- No customization of workflows, yet.
+
+## Available Modules
+
+_Note: all modules inherit from the BasicModule abstract class._
+
+- FolderWatcher: uses System.IO.FileSystemWatcher to monitor a folder for new files.
+
+## Supporting Classes
+
+- BasicModule: the abstract ancestor of all modules, which provides the framework for module interconnection.
+- OutputCollection: allows a BasicModule to create pairs of associations between outputs and receivers. On initialization, receives an array of output labels (e.g. Accept, Reject), each of which can be assigned a BasicModule. For instance, FolderWatcher defines one output called "NextModule"; it invokes the _Give_ method on this object any time a file is received.
