@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Printing_Multiplexer
+namespace Printing_Multiplexer_Modules
 {
     public class OutputCollection
     {

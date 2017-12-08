@@ -6,11 +6,11 @@ using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Printing_Multiplexer
+namespace Printing_Multiplexer_Modules
 {
     public class FolderWatcher : BasicModule
     {
-        const string NextModule = "NextModule";
+        public const string NextModule = "NextModule";
 
         FileSystemWatcher fsw = new FileSystemWatcher();
 
@@ -23,6 +23,7 @@ namespace Printing_Multiplexer
             fsw.IncludeSubdirectories = false;
             // Use the LastWrite filter so that we can (in theory) check once per file write and not have to loop to wait for the file to become available. That SHOULD mean that, in OnChanged, we simply check whether the file is available to open, yet, and if not, we wait for another event.
             fsw.NotifyFilter = NotifyFilters.LastWrite;
+            fsw.Filter = "*.jpg";
             fsw.Changed += new FileSystemEventHandler(OnChanged);
         }
 

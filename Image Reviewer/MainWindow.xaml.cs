@@ -1,4 +1,4 @@
-﻿using Printing_Multiplexer;
+﻿using Printing_Multiplexer_Modules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,10 +23,14 @@ namespace Image_Reviewer
     public partial class MainWindow : Window
     {
         FolderWatcher folderWatcher = new FolderWatcher();
+        ImageReviewer imageReviewer = new ImageReviewer();
 
         public MainWindow()
         {
             InitializeComponent();
+
+            // The folderWatcher connects to the imageReviewer...
+            folderWatcher.Outputs.SetOutput(FolderWatcher.NextModule, imageReviewer);
         }
 
         private void InputFolderButton_Click(object sender, RoutedEventArgs e)
@@ -37,6 +41,27 @@ namespace Image_Reviewer
                 InputFolderTextBox.Text = folderBrowser.SelectedPath;
                 folderWatcher.SetFolder(folderBrowser.SelectedPath);
             }
+        }
+
+        private void AcceptButton_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO Do something here
+            nextImage();
+        }
+
+        private void RejectButton_Click(object sender, RoutedEventArgs e)
+        {
+            // TODO Do something here
+            nextImage();
+        }
+
+        private void nextImage()
+        {
+            // Get the next image in a different thread, in case the queue is empty.
+            Task.Run(() =>
+           {
+               ImagePreview.Source = imageReviewer.NextImage();
+           });
         }
     }
 }

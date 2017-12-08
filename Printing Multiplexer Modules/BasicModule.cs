@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
-namespace Printing_Multiplexer
+namespace Printing_Multiplexer_Modules
 {
     public abstract class BasicModule
     {
