@@ -31,6 +31,9 @@ namespace Image_Reviewer
 
             // The folderWatcher connects to the imageReviewer...
             folderWatcher.Outputs.SetOutput(FolderWatcher.NextModule, imageReviewer);
+
+            // Load the first image whenever it's ready.
+            nextImage();
         }
 
         private void InputFolderButton_Click(object sender, RoutedEventArgs e)
@@ -67,12 +70,13 @@ namespace Image_Reviewer
 
             // For testing, let's just do it synchronously. Let's suppose we only press the button once there's an image ready.
             // ImagePreview.Source = imageReviewer.NextImage();
-            ImagePreview.Source = imageReviewer.NextImage(nextImageCallback);
+            ImagePreview.Source = imageReviewer.NextImage(nextImage, Dispatcher);
         }
 
         // Callback function 
         private void nextImageCallback(ImageSource source)
         {
+            Console.WriteLine(source.ToString());
             ImagePreview.Source = source;
         }
     }

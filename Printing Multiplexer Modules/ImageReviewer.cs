@@ -7,10 +7,11 @@ using System.Threading;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
 namespace Printing_Multiplexer_Modules
 {
-    public delegate void NextImageCallback (ImageSource source);
+    public delegate void NextImageCallback ();
 
     public class ImageReviewer : BasicModule
     {
@@ -18,6 +19,8 @@ namespace Printing_Multiplexer_Modules
         SpinLock fileLock = new SpinLock();
         Queue<FileInfo> files = new Queue<FileInfo>();
         NextImageCallback nextImageCallback = null;
+        Dispatcher nextImageCallbackDispatcher = null;
+        
         FileInfo fileUnderReview = null;
 
         // ManualResetEvent signal = new ManualResetEvent(false);
@@ -87,7 +90,7 @@ namespace Printing_Multiplexer_Modules
         }
         */
 
-        public ImageSource NextImage(NextImageCallback callback)
+        public ImageSource NextImage(NextImageCallback callback, System.Windows.Threading.Dispatcher dispatcher)
         {
             ImageSource returnValue = null;
             bool gotLock = false;
@@ -97,6 +100,7 @@ namespace Printing_Multiplexer_Modules
 
             // Clear any saved callbacks; this request overrides them.
             nextImageCallback = null;
+            nextImageCallbackDispatcher = null;
 
             if (files.Count > 0)
             {
@@ -120,6 +124,8 @@ namespace Printing_Multiplexer_Modules
                 // Nothing to dequeue. Save a callback.
 
                 nextImageCallback = callback;
+                nextImageCallbackDispatcher = dispatcher;
+
                 fileLock.Exit();
 
                 // And clear the current saved file.
@@ -135,6 +141,8 @@ namespace Printing_Multiplexer_Modules
 
             // We have the lock.
 
+            files.Enqueue(file);
+
             if (nextImageCallback != null)
             {
                 // Someone's waiting. Hand the image straight to them.
@@ -142,21 +150,20 @@ namespace Printing_Multiplexer_Modules
                 // First, let's take care of the work that must be locked.
                 // We'll save a copy of the callback and clear the shared memory.
                 NextImageCallback callback = nextImageCallback;
+                Dispatcher dispatcher = nextImageCallbackDispatcher;
                 nextImageCallback = null;
+                nextImageCallbackDispatcher = null;
 
                 // Save the file since it's being reviewed.
                 fileUnderReview = file;
 
-                // Now, we can unlock before doing the slower work.
                 fileLock.Exit();
 
                 // Now we do the real work: make a new BitmapImage and pass it on.
-                callback(makeImage(file));                
+                dispatcher.Invoke(() => callback());
             }
             else
             {
-                // Just add it to the queue.
-                files.Enqueue(file);
                 fileLock.Exit();
             }
         }
