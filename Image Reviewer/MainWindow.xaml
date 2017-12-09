@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:Image_Reviewer"
         mc:Ignorable="d"
         Title="Image Reviewer" Height="600" Width="880">
-    <Grid>
+    <Grid  Background="#333333">
         <Grid.ColumnDefinitions>
             <ColumnDefinition />
             <ColumnDefinition Width="180" />
@@ -14,7 +14,7 @@
         
         <Image Name="ImagePreview" Grid.Column="0" Grid.Row="0" />
 
-        <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,10">
+        <StackPanel Grid.Column="1" Grid.Row="0" Background="#eee" VerticalAlignment="Stretch">
             <!-- FolderWatcher Path -->
             <Label>
                 Folder To Watch
