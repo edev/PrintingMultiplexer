@@ -23,75 +23,18 @@ namespace Printing_Multiplexer_Modules
         
         FileInfo fileUnderReview = null;
 
-        // ManualResetEvent signal = new ManualResetEvent(false);
-        // Thread queueProcessor;
+        public ImageReviewer() { }
+        public ImageReviewer(Logger logger, Dispatcher dispatcher) : base(logger, dispatcher) { }
 
         public override void Give(FileInfo file)
         {
             enqueue(file);
         }
 
-        // Dequeue the next file, if one exists, and load it as the Source of destination. If the queue is empty, wait for the signal.
-        /*
-        public BitmapImage NextImage()
-        {
-            FileInfo file = null;
-            BitmapImage bitmap = new BitmapImage();
-            bool retrievedImage = false;
-            bool gotLock;
-
-            while (!retrievedImage)
-            {
-                // Acquire the lock.
-                gotLock = false;
-                while (!gotLock) fileLock.Enter(ref gotLock);
-
-                if (files.Count > 0)
-                {
-                    // Great! We can dequeue.
-                    file = files.Dequeue();
-                    fileLock.Exit();
-
-                    // Load the image.
-                    bitmap.BeginInit();
-                    // Cache it on load so we can safely move, delete, and so on.
-                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmap.UriSource = new Uri(file.FullName);
-                    bitmap.EndInit();
-
-                    // Don't loop again.
-                    retrievedImage = true;
-                }
-                else
-                {
-                    // Wait for signal and try again.
-                    signal.Reset();
-                    fileLock.Exit();
-                    signal.WaitOne();
-                }
-            }
-
-            return bitmap;
-        }
-
-        // Either add the file to the wait queue or, if someone is already waiting on a response, simply send the file directly along.
-        void enqueue(FileInfo file)
-        {
-            if (file == null) return;
-
-            bool gotLock = false;
-            while (!gotLock) fileLock.Enter(ref gotLock);
-
-            // Now that we're locked, enqueue, then set the signal.
-            files.Enqueue(file);
-            signal.Set();
-
-            fileLock.Exit();
-        }
-        */
-
+        // Dequeue the next file, load it as a BitmapImage, and return it. If there is no file, store the callback and dispatcher, to be called when the next file is enqueued.
         public ImageSource NextImage(NextImageCallback callback, System.Windows.Threading.Dispatcher dispatcher)
         {
+            // TODO Consider reusing the dispatcher from BasicModule, which was added as part of logging.
             ImageSource returnValue = null;
             bool gotLock = false;
             while (!gotLock) fileLock.Enter(ref gotLock);
@@ -111,13 +54,14 @@ namespace Printing_Multiplexer_Modules
                 // Get the next file to process.
                 file = files.Dequeue();
 
+                log($"ImageReviewer.NextImage: Dequeued file: {file.FullName}");
+
                 // Save the file so we have it when the decision to accept/reject comes back.
                 fileUnderReview = file;
                 fileLock.Exit();
 
                 // Load the image, AFTER exiting.
                 returnValue = makeImage(file);
-
             }
             else
             {
@@ -130,6 +74,8 @@ namespace Printing_Multiplexer_Modules
 
                 // And clear the current saved file.
                 fileUnderReview = null;
+
+                log($"ImageReviewer.NextImage: Nothing to dequeue. Saved callback.");
             }
             return returnValue;
         }
@@ -159,12 +105,17 @@ namespace Printing_Multiplexer_Modules
 
                 fileLock.Exit();
 
+                log($"ImageReviewer.enqueue: Enqueued and invoking callback for: {file.FullName}");
+
                 // Now we do the real work: make a new BitmapImage and pass it on.
                 dispatcher.Invoke(() => callback());
             }
             else
             {
+                // We're just enqueueing in the background. Nothing more to do.
                 fileLock.Exit();
+
+                log($"ImageReviewer.enqueue: Enqueued: {file.FullName}");
             }
         }
 
@@ -178,6 +129,7 @@ namespace Printing_Multiplexer_Modules
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.UriSource = new Uri(file.FullName);
             bitmap.EndInit();
+            log($"ImageReviewer.makeImage: Loaded image: {file.FullName}");
             return bitmap;
         }
     }

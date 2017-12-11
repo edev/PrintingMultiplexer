@@ -23,14 +23,15 @@ namespace Image_Reviewer
     public partial class MainWindow : Window
     {
         FolderWatcher folderWatcher;
-        ImageReviewer imageReviewer = new ImageReviewer();
+        ImageReviewer imageReviewer;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            // Initialize folderWatcher with our logging method.
-            folderWatcher = new FolderWatcher(Log, Dispatcher);            
+            // Initialize folderWatcher and ImageReviewer with our logging method.
+            folderWatcher = new FolderWatcher(Log, Dispatcher);
+            imageReviewer = new ImageReviewer(Log, Dispatcher);
 
             // The folderWatcher connects to the imageReviewer...
             folderWatcher.Outputs.SetOutput(FolderWatcher.NextModule, imageReviewer);

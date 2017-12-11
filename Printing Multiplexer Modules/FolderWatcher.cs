@@ -39,13 +39,13 @@ namespace Printing_Multiplexer_Modules
             // TODO Expose this option to the user.
             fsw.Filter = "*.jpg";
 
-//             fsw.Changed += new FileSystemEventHandler(OnChanged);
             fsw.Created += new FileSystemEventHandler(OnCreated);
+            // TODO Handle other events - such as deleted files?
         }
 
         private void OnCreated(object sender, FileSystemEventArgs e)
         {
-            log($"FileSystemWatcher: File creation detected: {e.FullPath}");
+            log($"FileSystemWatcher.OnCreated: File creation detected: {e.FullPath}");
             
             // Make a FileInfo object out of it.
             FileInfo f = null;
@@ -56,21 +56,21 @@ namespace Printing_Multiplexer_Modules
             catch (Exception exception)
             {
                 // Well, guess we won't be handling this file.... Ignore.
-                log($"FileSystemWatcher: OnChanged: Exception creating FileInfo object: {exception.Message}");
+                log($"FileSystemWatcher.OnCreated: Exception creating FileInfo object: {exception.Message}");
                 return;
             }
 
             // File's not ready yet. Ignore.
             while (!isFileUnlocked(f))
             {
-                log($"FileSystemWatcher: OnChanged: Ignoring locked file: {e.FullPath}");
+                log($"FileSystemWatcher.OnCreated: Ignoring locked file: {e.FullPath}");
                 Thread.Sleep(threadSleepTime);
 
                 // TODO Detect issues that aren't going to resolve themselves and cancel. Maybe have isFileUnlocked rethrow if the exception is not an in-use file?
             }
 
             // File is READY!
-            log($"FileSystemWatcher: Giving file to ImageReviewer module: {e.FullPath}");
+            log($"FileSystemWatcher.OnCreated: Giving file to ImageReviewer module: {e.FullPath}");
             Outputs.GetOutput(NextModule)?.Give(f);
         }
 
@@ -85,7 +85,7 @@ namespace Printing_Multiplexer_Modules
         {
             if(folder == null)
             {
-                log($"FileSystemWatcher: SetFolder(null) called. Ignoring.");
+                log($"FileSystemWatcher.SetFolder(null) called. Ignoring.");
                 return false;
             }
 
@@ -93,11 +93,11 @@ namespace Printing_Multiplexer_Modules
             {
                 fsw.Path = folder;
                 fsw.EnableRaisingEvents = true;
-                log($"FileSystemWatcher: Now watching folder {fsw.Path}");
+                log($"FileSystemWatcher.SetFolder: Now watching folder {fsw.Path}");
             }
             catch (ArgumentException e)
             {
-                log($"FileSystemWatcher: SetFolder({folder}) raised exception: {e.Message}");
+                log($"FileSystemWatcher.SetFolder({folder}) raised exception: {e.Message}");
                 return false;
             }
 
@@ -119,7 +119,7 @@ namespace Printing_Multiplexer_Modules
                 // still being written to
                 // or being processed by another thread
                 // or does not exist (has already been processed).
-                log($"FileSystemWatcher: isFileUnlocked: IOException: {e.Message}");
+                log($"FileSystemWatcher.isFileUnlocked: IOException: {e.Message}");
                 return false;
             }
             finally
