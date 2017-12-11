@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BasicModule.cs" />
+    <Compile Include="FileMover.cs" />
     <Compile Include="FolderWatcher.cs" />
     <Compile Include="ImageReviewer.cs" />
     <Compile Include="OutputCollection.cs" />
