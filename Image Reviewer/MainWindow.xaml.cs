@@ -56,6 +56,26 @@ namespace Image_Reviewer
             }
         }
 
+        private void AcceptFolderButton_Click(object Sender, RoutedEventArgs e)
+        {
+            FolderBrowserDialog folderBrowser = new FolderBrowserDialog();
+            if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                AcceptFolderTextBox.Text = folderBrowser.SelectedPath;
+                acceptMover.DestinationFolder = folderBrowser.SelectedPath;
+            }
+        }
+
+        private void RejectFolderButton_Click(object Sender, RoutedEventArgs e)
+        {
+            FolderBrowserDialog folderBrowser = new FolderBrowserDialog();
+            if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                RejectFolderTextBox.Text = folderBrowser.SelectedPath;
+                rejectMover.DestinationFolder = folderBrowser.SelectedPath;
+            }
+        }
+
         private void AcceptButton_Click(object sender, RoutedEventArgs e)
         {
             imageReviewer.Accept();

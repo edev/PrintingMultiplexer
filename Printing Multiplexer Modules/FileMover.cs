@@ -12,9 +12,10 @@ namespace Printing_Multiplexer_Modules
     {
         public const string NextModule = "NextModule";
 
+        private string destinationFolder;
         public string DestinationFolder
         {
-            get { return DestinationFolder; }
+            get { return destinationFolder; }
             set
             {
                 if (Directory.Exists(value))
@@ -25,7 +26,7 @@ namespace Printing_Multiplexer_Modules
                         Directory.GetAccessControl(value);
 
                         // Success!
-                        DestinationFolder = value;
+                        destinationFolder = value;
                         return;
                     }
                     catch (Exception e)
@@ -35,12 +36,12 @@ namespace Printing_Multiplexer_Modules
                 }
 
                 // If we're still here, there's been a failure.
-                DestinationFolder = null;
+                destinationFolder = null;
             }
         }
 
-        public FileMover() { }
-        public FileMover(Logger logger, Dispatcher dispatcher) : base(logger, dispatcher) { }
+        public FileMover() { initialize(); }
+        public FileMover(Logger logger, Dispatcher dispatcher) : base(logger, dispatcher) { initialize(); }
 
         private void initialize()
         {
@@ -55,6 +56,8 @@ namespace Printing_Multiplexer_Modules
 
         private void moveAndGiveFile(FileInfo file)
         {
+            if (file == null) return;
+
             // If we have nowhere to put the file, pass it along (or let it disappear from the pipeline, if there's nowhere to go).
             if (DestinationFolder == null)
             {
@@ -65,9 +68,22 @@ namespace Printing_Multiplexer_Modules
 
             try
             {
+                string destinationPath = DestinationFolder + "/" + file.Name;
+
+                try
+                {
+                    // Remove the file if it exists.
+                    if (File.Exists(destinationPath)) File.Delete(destinationPath);
+                    log($"FileMover.moveAndGiveFile: Deleted existing file: {destinationPath}");
+                }
+                catch(Exception e)
+                {
+                    log($"FileMover.moveAndGiveFile: Could not delete existing file: {destinationPath}");
+                }
+
                 // Attempt the move.
-                log($"FileMover.Give: Moving file: {file.FullName}");
-                file.MoveTo(DestinationFolder);
+                file.MoveTo(destinationPath);
+                log($"FileMover.moveAndGiveFile: Moved file: {file.FullName}");
             }
             catch (Exception e)
             {

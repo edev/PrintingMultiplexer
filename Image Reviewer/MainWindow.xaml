@@ -16,9 +16,10 @@
 
         <Grid.RowDefinitions>
             <RowDefinition />
-            <RowDefinition Height="200" /><!-- Around 30-50 will display one line of text. -->
+            <RowDefinition Height="200" />
+            <!-- Around 30-50 will display one line of text. -->
         </Grid.RowDefinitions>
-        
+
         <Image Name="ImagePreview"
                Grid.Column="0" 
                Grid.Row="0" />
@@ -32,32 +33,37 @@
                 Folder To Watch
             </Label>
             <TextBox Name="InputFolderTextBox" 
-                     IsEnabled="False" 
-                     Text="(Choose folder)" />
+                     Text="(Choose folder)" IsReadOnly="True" />
             <Button Name="InputFolderButton" 
                     Click="InputFolderButton_Click">
                 Choose Folder...
             </Button>
             <Separator />
-            
+
             <!-- ImageReviewer Paths -->
             <Label>
                 Accept Folder
             </Label>
-            <TextBox IsEnabled="False" />
-            <Button>
+            <TextBox Name="AcceptFolderTextBox"
+                     Text="(Choose folder)" 
+                     IsReadOnly="True" />
+            <Button Name="AcceptFolderButton"
+                    Click="AcceptFolderButton_Click">
                 Choose Folder...
             </Button>
-            
+
             <Label>
                 Reject Folder
             </Label>
-            <TextBox IsEnabled="False" />
-            <Button>
+            <TextBox Name="RejectFolderTextBox" 
+                     Text="(Choose folder)" 
+                     IsReadOnly="True" />
+            <Button Name="RejectFolderButton"
+                    Click="RejectFolderButton_Click">
                 Choose Folder...
             </Button>
             <Separator />
-            
+
             <!-- ImageReviewer Actions -->
             <Button Name="AcceptButton" 
                     Click="AcceptButton_Click">
@@ -78,7 +84,7 @@
                       ResizeDirection="Rows" 
                       Height="4" 
                       Background="#ccc" />
-        
+
         <TextBox Grid.Column="0" 
                  Grid.ColumnSpan="2" 
                  Grid.Row="1" 
@@ -91,5 +97,5 @@
 
     </Grid>
 
-    
+
 </Window>

@@ -155,6 +155,7 @@ namespace Printing_Multiplexer_Modules
         // Sends the file under review to the Accept module, if any, then moves on to the next image and returns a bitmap of it.
         public void Accept()
         {
+            if (fileUnderReview == null) return;
             Outputs.GetOutput(AcceptOutput)?.Give(fileUnderReview);
             fileUnderReview = null;
         }
@@ -162,6 +163,7 @@ namespace Printing_Multiplexer_Modules
         // Sends the file under review to the Reject module, if any, then moves on to the next image and returns a bitmap of it.
         public void Reject()
         {
+            if (fileUnderReview == null) return;
             Outputs.GetOutput(RejectOutput)?.Give(fileUnderReview);
             fileUnderReview = null;
         }
