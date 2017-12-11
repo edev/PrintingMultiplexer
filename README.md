@@ -2,7 +2,7 @@
 
 This project aims to solve the problem space of reviewing documents and using multiple printers to print them. 
 
-The motivation behind this project is the annual Christmas dinner for the [Sharing God's Bounty](sharinggodsbounty.com) soup kitchen in Sacramento, California. After eating dinner, families line up to take photos with Santa. A team of dedicated volunteers photographs, proofs, prints, and frames photos. The volunteers use multiple printers to keep the line moving as fast as possible, but without using specialized software, it is difficult to manage more than two printers efficiently. Since the workflow is highly repetitive, this project aims to automate it.
+The motivation behind this project is the annual Christmas dinner for the [Sharing God's Bounty](http://sharinggodsbounty.com) soup kitchen in Sacramento, California. After eating dinner, families line up to take photos with Santa. A team of dedicated volunteers photographs, proofs, prints, and frames photos. The volunteers use multiple printers to keep the line moving as fast as possible, but without using specialized software, it is difficult to manage more than two printers efficiently. Since the workflow is highly repetitive, this project aims to automate it.
 
 ## Modular Architecture
 
@@ -40,6 +40,14 @@ Current limitations include (but are not limited to):
 _Note: all modules inherit from the BasicModule abstract class._
 
 - FolderWatcher: uses System.IO.FileSystemWatcher to monitor a folder for new files.
+- ImageReviewer: maintains a queue of files it's given, feeds them as ImageSource objects via ImageReviewer.NextImage, and dispatches them to an Accept or Reject module.
+
+## Module Wish-List
+
+- DriveWatcher module: watches for a drive to be inserted, scours the drive (or a subfolder) for files of a given type, and Gives them. This would be useful for inserting SD/CF cards: use a DriveWatcher connected to a file-moving module that will effectively clear out the flash drive and move files into a review folder.
+- A file-moving module
+- A branch module (1 input, 0+ outputs)
+- A drive eject module: combine a DriveWatcher, a FileMover, and a Branch to both an Eject and an ImageReview module to create a seamless removable storage workflow, i.e. running SD cards.
 
 ## Supporting Classes
 
