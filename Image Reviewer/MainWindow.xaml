@@ -5,22 +5,37 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Image_Reviewer"
         mc:Ignorable="d"
-        Title="Image Reviewer" Height="600" Width="880">
+        Title="Image Reviewer" 
+        Height="600"
+        Width="880">
     <Grid  Background="#333333">
         <Grid.ColumnDefinitions>
             <ColumnDefinition />
             <ColumnDefinition Width="180" />
         </Grid.ColumnDefinitions>
-        
-        <Image Name="ImagePreview" Grid.Column="0" Grid.Row="0" />
 
-        <StackPanel Grid.Column="1" Grid.Row="0" Background="#eee" VerticalAlignment="Stretch">
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition Height="200" /><!-- Around 30-50 will display one line of text. -->
+        </Grid.RowDefinitions>
+        
+        <Image Name="ImagePreview"
+               Grid.Column="0" 
+               Grid.Row="0" />
+
+        <StackPanel Grid.Column="1" 
+                    Grid.Row="0" 
+                    Background="#eee" 
+                    VerticalAlignment="Stretch">
             <!-- FolderWatcher Path -->
             <Label>
                 Folder To Watch
             </Label>
-            <TextBox Name="InputFolderTextBox" IsEnabled="False" Text="(Choose folder)" />
-            <Button Name="InputFolderButton" Click="InputFolderButton_Click">
+            <TextBox Name="InputFolderTextBox" 
+                     IsEnabled="False" 
+                     Text="(Choose folder)" />
+            <Button Name="InputFolderButton" 
+                    Click="InputFolderButton_Click">
                 Choose Folder...
             </Button>
             <Separator />
@@ -44,14 +59,35 @@
             <Separator />
             
             <!-- ImageReviewer Actions -->
-            <Button Name="AcceptButton" Click="AcceptButton_Click">
+            <Button Name="AcceptButton" 
+                    Click="AcceptButton_Click">
                 Accept
             </Button>
-            <Button Name="RejectButton" Click="RejectButton_Click">
+            <Button Name="RejectButton" 
+                    Click="RejectButton_Click">
                 Reject
             </Button>
         </StackPanel>
 
+        <GridSplitter Grid.Column="0" 
+                      Grid.ColumnSpan="2" 
+                      Grid.Row="0" 
+                      HorizontalAlignment="Stretch" 
+                      VerticalAlignment="Bottom" 
+                      ShowsPreview="True" 
+                      ResizeDirection="Rows" 
+                      Height="4" 
+                      Background="#ccc" />
+        
+        <TextBox Grid.Column="0" 
+                 Grid.ColumnSpan="2" 
+                 Grid.Row="1" 
+                 Name="TextLog" 
+                 IsReadOnly="True" 
+                 VerticalScrollBarVisibility="Auto" 
+                 Margin="6"
+                 TextWrapping="Wrap"/>
+        <!-- TODO Make the text box scroll to the bottom when it's minimized? -->
 
     </Grid>
 

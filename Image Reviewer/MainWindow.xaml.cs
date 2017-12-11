@@ -22,12 +22,15 @@ namespace Image_Reviewer
     /// </summary>
     public partial class MainWindow : Window
     {
-        FolderWatcher folderWatcher = new FolderWatcher();
+        FolderWatcher folderWatcher;
         ImageReviewer imageReviewer = new ImageReviewer();
 
         public MainWindow()
         {
             InitializeComponent();
+
+            // Initialize folderWatcher with our logging method.
+            folderWatcher = new FolderWatcher(Log, Dispatcher);            
 
             // The folderWatcher connects to the imageReviewer...
             folderWatcher.Outputs.SetOutput(FolderWatcher.NextModule, imageReviewer);
@@ -78,6 +81,12 @@ namespace Image_Reviewer
         {
             Console.WriteLine(source.ToString());
             ImagePreview.Source = source;
+        }
+
+        public void Log(string text)
+        {
+            TextLog.AppendText(text);
+            TextLog.AppendText("\n");
         }
     }
 }
