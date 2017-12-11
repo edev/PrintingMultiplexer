@@ -8,7 +8,7 @@ using System.Windows.Threading;
 
 namespace Printing_Multiplexer_Modules
 {
-    class FileMover : BasicModule
+    public class FileMover : BasicModule
     {
         public const string NextModule = "NextModule";
 

@@ -24,17 +24,23 @@ namespace Image_Reviewer
     {
         FolderWatcher folderWatcher;
         ImageReviewer imageReviewer;
+        FileMover acceptMover;
+        FileMover rejectMover;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            // Initialize folderWatcher and ImageReviewer with our logging method.
+            // Initialize modules, with our logging method.
             folderWatcher = new FolderWatcher(Log, Dispatcher);
             imageReviewer = new ImageReviewer(Log, Dispatcher);
+            acceptMover = new FileMover(Log, Dispatcher);
+            rejectMover = new FileMover(Log, Dispatcher);
 
-            // The folderWatcher connects to the imageReviewer...
+            // Connect the modules in their intended orders.
             folderWatcher.Outputs.SetOutput(FolderWatcher.NextModule, imageReviewer);
+            imageReviewer.Outputs.SetOutput(ImageReviewer.AcceptOutput, acceptMover);
+            imageReviewer.Outputs.SetOutput(ImageReviewer.RejectOutput, rejectMover);
 
             // Load the first image whenever it's ready.
             nextImage();
@@ -52,28 +58,18 @@ namespace Image_Reviewer
 
         private void AcceptButton_Click(object sender, RoutedEventArgs e)
         {
-            // TODO Do something here
+            imageReviewer.Accept();
             nextImage();
         }
 
         private void RejectButton_Click(object sender, RoutedEventArgs e)
         {
-            // TODO Do something here
+            imageReviewer.Reject();
             nextImage();
         }
 
         private void nextImage()
         {
-            // Get the next image in a different thread, in case the queue is empty.
-            /*
-            Task.Run(() =>
-           {
-               ImagePreview.Source = imageReviewer.NextImage();
-           });
-           */
-
-            // For testing, let's just do it synchronously. Let's suppose we only press the button once there's an image ready.
-            // ImagePreview.Source = imageReviewer.NextImage();
             ImagePreview.Source = imageReviewer.NextImage(nextImage, Dispatcher);
         }
 

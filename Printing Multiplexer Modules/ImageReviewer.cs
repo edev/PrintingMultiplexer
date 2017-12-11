@@ -15,6 +15,10 @@ namespace Printing_Multiplexer_Modules
 
     public class ImageReviewer : BasicModule
     {
+        public static readonly string AcceptOutput = "Accept";
+        public static readonly string RejectOutput = "Reject";
+        public static readonly string[] OutputNames = { AcceptOutput, RejectOutput };
+
         // This lock protects ALL private member fields.
         SpinLock fileLock = new SpinLock();
         Queue<FileInfo> files = new Queue<FileInfo>();
@@ -23,8 +27,13 @@ namespace Printing_Multiplexer_Modules
         
         FileInfo fileUnderReview = null;
 
-        public ImageReviewer() { }
-        public ImageReviewer(Logger logger, Dispatcher dispatcher) : base(logger, dispatcher) { }
+        public ImageReviewer() { initialize(); }
+        public ImageReviewer(Logger logger, Dispatcher dispatcher) : base(logger, dispatcher) { initialize(); }
+
+        private void initialize()
+        {
+            Outputs = new OutputCollection(OutputNames);
+        }
 
         public override void Give(FileInfo file)
         {
@@ -32,6 +41,7 @@ namespace Printing_Multiplexer_Modules
         }
 
         // Dequeue the next file, load it as a BitmapImage, and return it. If there is no file, store the callback and dispatcher, to be called when the next file is enqueued.
+        // If a file is under review, it will NOT be passed to the next module; it will silently exit the workflow.
         public ImageSource NextImage(NextImageCallback callback, System.Windows.Threading.Dispatcher dispatcher)
         {
             // TODO Consider reusing the dispatcher from BasicModule, which was added as part of logging.
@@ -140,6 +150,20 @@ namespace Printing_Multiplexer_Modules
             bitmap.EndInit();
             log($"ImageReviewer.makeImage: Loaded image: {file.FullName}");
             return bitmap;
+        }
+
+        // Sends the file under review to the Accept module, if any, then moves on to the next image and returns a bitmap of it.
+        public void Accept()
+        {
+            Outputs.GetOutput(AcceptOutput)?.Give(fileUnderReview);
+            fileUnderReview = null;
+        }
+
+        // Sends the file under review to the Reject module, if any, then moves on to the next image and returns a bitmap of it.
+        public void Reject()
+        {
+            Outputs.GetOutput(RejectOutput)?.Give(fileUnderReview);
+            fileUnderReview = null;
         }
     }
 }
