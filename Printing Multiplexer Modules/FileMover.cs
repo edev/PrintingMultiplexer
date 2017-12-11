@@ -81,7 +81,7 @@ namespace Printing_Multiplexer_Modules
                     log($"FileMover.moveAndGiveFile: Could not delete existing file: {destinationPath}");
                 }
 
-                // Attempt the move.
+                // Attempt the move. Note that MoveTo updates the fullName on successful move, so we don't have to worry about that.
                 file.MoveTo(destinationPath);
                 log($"FileMover.moveAndGiveFile: Moved file: {file.FullName}");
             }

@@ -41,11 +41,13 @@ _Note: all modules inherit from the BasicModule abstract class._
 
 - FolderWatcher: uses System.IO.FileSystemWatcher to monitor a folder for new files.
 - ImageReviewer: maintains a queue of files it's given, feeds them as ImageSource objects via ImageReviewer.NextImage, and dispatches them to an Accept or Reject module.
+- FileMover: moves files it's given to a new folder and gives them to the next module.
 
 ## Module Wish-List
 
-- DriveWatcher module: watches for a drive to be inserted, scours the drive (or a subfolder) for files of a given type, and Gives them. This would be useful for inserting SD/CF cards: use a DriveWatcher connected to a file-moving module that will effectively clear out the flash drive and move files into a review folder.
-- A file-moving module
+- An option in FolderWatcher to add all of the files already present into the folder.
+- DriveWatcher module: watches for a drive to be inserted, scours the drive (or a subfolder) for files of a given type, and Gives them. This would be useful for inserting SD/CF cards: use a DriveWatcher connected to a FileMover that will effectively clear out the flash drive and move files into a review folder.
+- A Windows Portable Devices module with similar capabilities to FolderWatcher.
 - A branch module (1 input, 0+ outputs)
 - A drive eject module: combine a DriveWatcher, a FileMover, and a Branch to both an Eject and an ImageReview module to create a seamless removable storage workflow, i.e. running SD cards.
 
