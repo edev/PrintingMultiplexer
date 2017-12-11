@@ -40,7 +40,7 @@ namespace Printing_Multiplexer_Modules
             fsw.Filter = "*.jpg";
 
             fsw.Created += new FileSystemEventHandler(OnCreated);
-            // TODO Handle other events - such as deleted files?
+            // TODO Handle other events - such as renamed files?
         }
 
         private void OnCreated(object sender, FileSystemEventArgs e)

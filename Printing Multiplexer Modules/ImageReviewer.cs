@@ -61,7 +61,16 @@ namespace Printing_Multiplexer_Modules
                 fileLock.Exit();
 
                 // Load the image, AFTER exiting.
-                returnValue = makeImage(file);
+                try
+                {
+                    returnValue = makeImage(file);
+                }
+                catch (Exception e)
+                {
+                    log($"ImageReviewer.NextImage: makeImage threw exception: {e.Message}");
+                    log("ImageReviewer.NextImage: Ignoring this image and recursing.");
+                    returnValue = NextImage(callback, dispatcher);
+                }
             }
             else
             {
