@@ -76,7 +76,7 @@ namespace Printing_Multiplexer_Modules
                     if (File.Exists(destinationPath)) File.Delete(destinationPath);
                     log($"FileMover.moveAndGiveFile: Deleted existing file: {destinationPath}");
                 }
-                catch(Exception e)
+                catch(Exception)
                 {
                     log($"FileMover.moveAndGiveFile: Could not delete existing file: {destinationPath}");
                 }

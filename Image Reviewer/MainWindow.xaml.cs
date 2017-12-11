@@ -1,6 +1,7 @@
 ﻿using Printing_Multiplexer_Modules;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,7 +14,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace Image_Reviewer
 {
@@ -54,6 +54,15 @@ namespace Image_Reviewer
                 InputFolderTextBox.Text = folderBrowser.SelectedPath;
                 folderWatcher.SetFolder(folderBrowser.SelectedPath);
             }
+
+            // Now, as a courtesy, let's see if there are existing folders we can pre-set for accept and reject.
+            string acceptPath = Path.Combine(folderBrowser.SelectedPath, ImageReviewer.AcceptOutput);
+            string rejectPath = Path.Combine(folderBrowser.SelectedPath, ImageReviewer.RejectOutput);
+            // These properties error-check their inputs, so we'll use that to our advantage here.
+            acceptMover.DestinationFolder = acceptPath;
+            rejectMover.DestinationFolder = rejectPath;
+            if (acceptMover.DestinationFolder != null) AcceptFolderTextBox.Text = acceptPath;
+            if (rejectMover.DestinationFolder != null) RejectFolderTextBox.Text = rejectPath;
         }
 
         private void AcceptFolderButton_Click(object Sender, RoutedEventArgs e)
