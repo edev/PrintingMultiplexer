@@ -8,7 +8,7 @@ using System.Windows.Controls;
 
 namespace Printing_Multiplexer
 {
-    internal class Printer : ListBoxItem
+    internal class ListBoxPrinter : ListBoxItem
     {
         // Extends ListBoxItem to add associated information.
 
@@ -26,14 +26,14 @@ namespace Printing_Multiplexer
 
         public PrintTicket Ticket { get; set; }
 
-        public Printer(string name, PrintQueue queue) : base()
+        public ListBoxPrinter(string name, PrintQueue queue) : base()
         {
             Content = name;
             Queue = queue;
             // Ticket will be auto-set.
         }
 
-        public Printer(String name, PrintQueue queue, PrintTicket ticket) : base()
+        public ListBoxPrinter(String name, PrintQueue queue, PrintTicket ticket) : base()
         {
             Content = name;
             Queue = queue;

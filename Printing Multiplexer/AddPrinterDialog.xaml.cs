@@ -20,7 +20,7 @@ namespace Printing_Multiplexer
     /// </summary>
     internal partial class AddPrinterDialog : Window
     {
-        internal Printer SelectedPrinter { get; private set; }
+        internal ListBoxPrinter SelectedPrinter { get; private set; }
 
         public AddPrinterDialog(ItemCollection printersToIgnore)
         {
@@ -31,12 +31,12 @@ namespace Printing_Multiplexer
             // First, remove ignore printers from the printer list.
             SortedDictionary<string, PrintQueue> printers = new SortedDictionary<string, PrintQueue>();
             foreach (PrintQueue q in printerQueueCollection) printers[q.Name] = q;
-            foreach (Printer p in printersToIgnore) printers.Remove(p.Content as string);
+            foreach (ListBoxPrinter p in printersToIgnore) printers.Remove(p.Content as string);
             
             // Now printers contains only printers that aren't on the ignore list. So let's add them to the UI.
             foreach(PrintQueue q in printers.Values)
             {
-                PrinterListBox.Items.Add(new Printer(q.Name, q));
+                PrinterListBox.Items.Add(new ListBoxPrinter(q.Name, q));
             }
 
             // Default to the first printer.
@@ -45,7 +45,7 @@ namespace Printing_Multiplexer
 
         private void okButton_Click(object sender, RoutedEventArgs e)
         {
-            SelectedPrinter = (Printer) PrinterListBox.SelectedItem;
+            SelectedPrinter = (ListBoxPrinter) PrinterListBox.SelectedItem;
             // If nothing is selected, don't close the box.
             if (SelectedPrinter == null) return;
             PrinterListBox.Items.Remove(SelectedPrinter);
