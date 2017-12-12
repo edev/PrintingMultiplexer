@@ -1,0 +1,54 @@
+﻿<Window x:Class="Printing_Multiplexer.AddPrinterDialog"
+        x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Printing_Multiplexer"
+        mc:Ignorable="d"
+        Title="Add Printer" 
+        SizeToContent="WidthAndHeight"
+        MinHeight="278"
+        MinWidth="252"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+    
+    <StackPanel VerticalAlignment="Stretch">
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            
+            <ListBox Name="PrinterListBox"
+                 VerticalAlignment="Stretch"
+                 Margin="6,6,6,0"
+                 MinHeight="200"
+                 Width="240"
+                 SelectionMode="Single">
+
+                <!-- Auto-populated. -->
+                
+            </ListBox>
+        </ScrollViewer>
+        <!-- Accept or Cancel -->
+        <StackPanel VerticalAlignment="Bottom"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+
+            <Button Name="cancelButton" 
+                    Click="cancelButton_Click"
+                    IsCancel="True"
+                    Width="60"
+                    Margin="6">
+                Cancel
+            </Button>
+
+            <Button Name="okButton" 
+                    Click="okButton_Click" 
+                    IsDefault="True"
+                    Width="60"
+                    Margin="0,6,6,6">
+                OK
+            </Button>
+
+        </StackPanel>
+    </StackPanel>
+</Window>

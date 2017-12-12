@@ -7,6 +7,46 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525">
     <Grid>
-        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition Width="120" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition /> <!-- Just one row for now. -->
+        </Grid.RowDefinitions>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+
+            <ListBox Name="PrinterList"
+                     Grid.Column="0"
+                     Grid.Row="0">
+
+            </ListBox>
+
+        </ScrollViewer>
+
+        <StackPanel Grid.Column="1"
+                    Grid.Row="0">
+
+            <Button Name="AddPrinterButton"
+                    Click="AddPrinterButton_Click"
+                    Content="Add Printer..." />
+
+            <Button Name="ModifyPrinterButon"
+                    Click="ModifyPrinterButon_Click"
+                    Content="Modify Printer" />
+
+            <Button Name="RemovePrinterButton"
+                    Click="RemovePrinterButton_Click"
+                    Content="Remove Printer" />
+
+            <!--
+            <Button Name="PrintButton" 
+                    Click="PrintButton_Click" 
+                    Content="Print" />
+            -->
+        </StackPanel>
     </Grid>
 </Window>
