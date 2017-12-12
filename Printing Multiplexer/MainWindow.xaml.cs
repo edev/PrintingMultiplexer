@@ -49,14 +49,17 @@ namespace Printing_Multiplexer
 
         private void AddPrinterButton_Click(object sender, RoutedEventArgs e)
         {
-            // PrintQueueCollection printers = new LocalPrintServer().GetPrintQueues();
-            AddPrinterDialog addPrinterDialog = new AddPrinterDialog();
+            // Create and show the Add Printer dialog.
+            AddPrinterDialog addPrinterDialog = new AddPrinterDialog(PrinterList.Items);
             addPrinterDialog.ShowDialog();
-            if (addPrinterDialog.DialogResult == true)
-            {
-                // User clicked OK. Add the printer.
-                PrinterList.Items.Add(addPrinterDialog.SelectedPrinter);
-            }
+
+            // If the user clicks "Cancel" on the Add Printer dialog, go no further.
+            if (addPrinterDialog.DialogResult == false) return;
+
+            // If we're still here, the user clicked OK.
+            
+            // User clicked OK. Add the printer.
+            PrinterList.Items.Add(addPrinterDialog.SelectedPrinter);
         }
 
         private void RemovePrinterButton_Click(object sender, RoutedEventArgs e)

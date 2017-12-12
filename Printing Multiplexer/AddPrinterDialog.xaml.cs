@@ -22,20 +22,32 @@ namespace Printing_Multiplexer
     {
         internal MainWindow.Printer SelectedPrinter { get; private set; }
 
-        public AddPrinterDialog()
+        public AddPrinterDialog(ItemCollection printersToIgnore)
         {
             InitializeComponent();
             LocalPrintServer pServer = new LocalPrintServer();
-            PrintQueueCollection printers = pServer.GetPrintQueues();
-            foreach(PrintQueue p in printers)
+            PrintQueueCollection printerQueueCollection = pServer.GetPrintQueues();
+
+            // First, remove ignore printers from the printer list.
+            SortedDictionary<string, PrintQueue> printers = new SortedDictionary<string, PrintQueue>();
+            foreach (PrintQueue q in printerQueueCollection) printers[q.Name] = q;
+            foreach (MainWindow.Printer p in printersToIgnore) printers.Remove(p.Content as string);
+            
+            // Now printers contains only printers that aren't on the ignore list. So let's add them to the UI.
+            foreach(PrintQueue q in printers.Values)
             {
-                PrinterListBox.Items.Add(new MainWindow.Printer(p.Name, p));
+                PrinterListBox.Items.Add(new MainWindow.Printer(q.Name, q));
             }
+
+            // Default to the first printer.
+            PrinterListBox.SelectedIndex = 0;
         }
 
         private void okButton_Click(object sender, RoutedEventArgs e)
         {
             SelectedPrinter = (MainWindow.Printer) PrinterListBox.SelectedItem;
+            // If nothing is selected, don't close the box.
+            if (SelectedPrinter == null) return;
             PrinterListBox.Items.Remove(SelectedPrinter);
             DialogResult = true;
         }
