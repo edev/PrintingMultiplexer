@@ -21,7 +21,8 @@
 
             <ListBox Name="PrinterList"
                      Grid.Column="0"
-                     Grid.Row="0">
+                     Grid.Row="0"
+                     SelectionMode="Single">
 
             </ListBox>
 

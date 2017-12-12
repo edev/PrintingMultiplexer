@@ -56,64 +56,44 @@ namespace Printing_Multiplexer
             // If the user clicks "Cancel" on the Add Printer dialog, go no further.
             if (addPrinterDialog.DialogResult == false) return;
 
-            // If we're still here, the user clicked OK.
-            
-            // User clicked OK. Add the printer.
+            // If the user clicks "Cancel" on the Print dialog, go no further.
+            if (!modifyPrinter(addPrinterDialog.SelectedPrinter)) return;
+
+            // User clicked OK PrintQueue and PrintTicket are fully set. Add the printer.
             PrinterList.Items.Add(addPrinterDialog.SelectedPrinter);
         }
 
         private void RemovePrinterButton_Click(object sender, RoutedEventArgs e)
         {
-
+            int index = PrinterList.SelectedIndex;
+            // Only remove if we have a selected index. Don't pass garbage on.
+            if (index < 0) return;
+            PrinterList.Items.RemoveAt(index);
         }
 
         private void ModifyPrinterButon_Click(object sender, RoutedEventArgs e)
         {
-
+            int selectedIndex = PrinterList.SelectedIndex;
+            if (selectedIndex < 0) return;
+            modifyPrinter((ListBoxPrinter)PrinterList.Items[selectedIndex]);
         }
 
-        private void PrintButton_Click(object sender, RoutedEventArgs e)
+        private bool modifyPrinter(ListBoxPrinter printer)
         {
-            // Let's get the basic print method down, and then we'll figure out the architectural concerns.
+            if (printer == null) return false;
 
-            // A print queue is essentially our handle to a single printer.
-            // PrintQueue printQueue;
-
-            // Our window into the printing system on the local machine. Allows us to see the printers on the system, etc.
-            // LocalPrintServer localPrintServer = new LocalPrintServer();
-
-            // A collection of print queues - we may use this as our data structure to manage printing operations.
-            // Question: we can iterate over available printers using an enumerator, but what is an "available" printer in this context?
-            // If it performs simple round robin, we don't want to do that. That's the wrong algorithm.
-            // I'm imagining that we'll use event handlers to add printers to the queue when they're done printing, so we might add and remove from this collection, but of course, that raises the question of whether they add at front, back, or anywhere they please. It's possible we may have to use a ConcurrentQueue<PrintQueue> instead.
-            // PrintQueueCollection localPrinterCollection = localPrintServer.GetPrintQueues();
-
-            // IEnumerator printerEnumerator = localPrinterCollection.GetEnumerator();
-
-            // if (printerEnumerator.MoveNext())
-            // {
-            //     // Here's our printer.
-            //     printQueue = (PrintQueue) printerEnumerator.Current;
-            // }
-            // else
-            // {
-            //     // No printer available.
-            //     // NOTE: This is NOT the final algorithm! I'm just following the PrintTicket example from the Microsoft API reference!
-            //     return;
-            // }
-
-            // I believe the print ticket is what holds our settings for a given printer, unless we use some other print schema object that holds some proprietary settings.
-            // I think we're going to want to store this, probably in a small class that also holds the associated print queue and deals with keeping them consistent with one another.
-            // Question: how do we customize the print ticket?
-            // PrintTicket printTicket = printQueue.DefaultPrintTicket;
-
-            // A print capabilities object represents what the printer can do; we can use this to customize a printer's settings.
-            // We won't use PrintCapabilities, most likely, since we want the user to customize the settings and give us a PrintTicket to hold on to.
-
+            // Initialize PrintDialog to use printer's Queue and Ticket
             PrintDialog pd = new PrintDialog();
-            pd.PrintTicket = ticket;
-            pd.ShowDialog();
-            ticket = pd.PrintTicket;
+            pd.PrintQueue = printer.Queue;
+            pd.PrintTicket = printer.Ticket;
+            pd.UserPageRangeEnabled = false;
+
+            // Show the dialog; if the user clicks Cancel, return.
+            if (pd.ShowDialog() == false) return false;
+
+            // Save the ticket only if the user hits Print
+            printer.Ticket = pd.PrintTicket;
+            return true;
         }
     }
 }
