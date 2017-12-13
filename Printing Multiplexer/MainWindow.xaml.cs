@@ -83,6 +83,17 @@ namespace Printing_Multiplexer
             if (printer == null) return false;
 
             // Initialize PrintDialog to use printer's Queue and Ticket
+            PrintDialog pd = new PrintDialog();
+            pd.PrintQueue = printer.Queue;
+            // pd.PrintTicket = printer.Ticket;
+            pd.UserPageRangeEnabled = false;
+
+            if (pd.ShowDialog() == false) return false;
+
+            // TODO FIXME This doesn't check that the printer is actually the same printer! It could be an invalid ticket!
+            printer.Ticket = pd.PrintTicket;
+
+            /*
             printer.Dialog.UserPageRangeEnabled = false;
 
             // Show the dialog; if the user clicks Cancel, return.
@@ -91,6 +102,7 @@ namespace Printing_Multiplexer
             var pc = printer.Dialog.PrintQueue.GetPrintCapabilities();
             // Save the ticket only if the user hits Print
             printer.Ticket = printer.Dialog.PrintTicket;
+            */
             return true;
         }
 
@@ -100,12 +112,14 @@ namespace Printing_Multiplexer
             if (PrinterList.SelectedItem == null) return;
             if (!File.Exists(fileToPrint)) return;
 
+            /*
             printImage(new FileInfo(fileToPrint), 
                 ((ListBoxPrinter)PrinterList.SelectedItem).Queue, 
                 ((ListBoxPrinter)PrinterList.SelectedItem).Ticket,
                 ((ListBoxPrinter)PrinterList.SelectedItem).Dialog);
+            */
 
-            /* Problem with this method: it prints a small selection of pixels, and it has borders on 2 sides....
+            /* Problem with this method: it prints a small selection of pixels, and it has borders on 2 sides.... */
             // Prepare the file to print.
             // Borrowed from https://stackoverflow.com/questions/265062/load-image-from-file-and-print-it-using-wpf-how
             var bi = new BitmapImage();
@@ -120,8 +134,12 @@ namespace Printing_Multiplexer
             dc.Close();
 
             // Print the file to the selected printer.
-            ((ListBoxPrinter)PrinterList.SelectedItem).Dialog.PrintVisual(vis, fileToPrint);
-            */
+            PrintDialog dialog = new PrintDialog();
+            dialog.PrintQueue = ((ListBoxPrinter)PrinterList.SelectedItem).Queue;
+            dialog.PrintTicket = ((ListBoxPrinter)PrinterList.SelectedItem).Ticket;
+            dialog.PrintVisual(vis, fileToPrint);
+            // ((ListBoxPrinter)PrinterList.SelectedItem).Dialog.PrintVisual(vis, fileToPrint);
+            // */
         }
 
         private void printImage(FileInfo source, PrintQueue queue, PrintTicket ticket, PrintDialog dialog)
@@ -146,7 +164,7 @@ namespace Printing_Multiplexer
             // Question: do I simply need to draw a 4x6 at proper resolution and it'll print it correctly? I think that's possible.
 
 
-            Console.WriteLine();
+            // Console.WriteLine();
             /*
             e.Graphics.DrawImage(nextImage, e.PageSettings.PrintableArea.X - e.PageSettings.HardMarginX, e.PageSettings.PrintableArea.Y - e.PageSettings.HardMarginY, e.PageSettings.Landscape ? e.PageSettings.PrintableArea.Height : e.PageSettings.PrintableArea.Width, e.PageSettings.Landscape ? e.PageSettings.PrintableArea.Width : e.PageSettings.PrintableArea.Height);
 
