@@ -43,11 +43,10 @@
                     Click="RemovePrinterButton_Click"
                     Content="Remove Printer" />
 
-            <!--
             <Button Name="PrintButton" 
                     Click="PrintButton_Click" 
-                    Content="Print" />
-            -->
+                    Content="Test Print" />
+            
         </StackPanel>
     </Grid>
 </Window>

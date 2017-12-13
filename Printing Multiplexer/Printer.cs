@@ -20,11 +20,31 @@ namespace Printing_Multiplexer
             {
                 // Update the queue, then reset the ticket to the default for the printer.
                 queue = value;
-                Ticket = queue?.DefaultPrintTicket;
+                Ticket = queue?.UserPrintTicket;
             }
         }
 
         public PrintTicket Ticket { get; set; }
+
+        private PrintDialog dialog;
+        public PrintDialog Dialog
+        {
+            get
+            {
+                if (dialog != null
+                    && dialog.PrintQueue == queue
+                    && dialog.PrintTicket == Ticket)
+                {
+                    return dialog;
+                }
+
+                // Otherwise, make a new one.
+                dialog = new PrintDialog();
+                dialog.PrintQueue = queue;
+                dialog.PrintTicket = Ticket;
+                return dialog;
+            }
+        }
 
         public ListBoxPrinter(string name, PrintQueue queue) : base()
         {
