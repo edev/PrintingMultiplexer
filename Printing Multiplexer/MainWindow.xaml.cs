@@ -130,7 +130,7 @@ namespace Printing_Multiplexer
 
             var vis = new DrawingVisual();
             var dc = vis.RenderOpen();
-            dc.DrawImage(bi, new Rect { Width = bi.Width, Height = bi.Height });
+            dc.DrawImage(bi, new Rect { Width = (double)((ListBoxPrinter)PrinterList.SelectedItem).Ticket.PageMediaSize.Width, Height = (double)((ListBoxPrinter)PrinterList.SelectedItem).Ticket.PageMediaSize.Height });
             dc.Close();
 
             // Print the file to the selected printer.
