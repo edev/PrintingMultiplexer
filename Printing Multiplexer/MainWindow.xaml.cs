@@ -26,6 +26,7 @@ namespace Printing_Multiplexer
     {
         FolderWatcher folderWatcher;
         PrinterMultiplexer printerMultiplexer;
+        FileMover fileMover;
 
         private static readonly string fileToPrint = "2017-09-09 11.13.08.jpg";
 
@@ -38,9 +39,11 @@ namespace Printing_Multiplexer
 
             folderWatcher = new FolderWatcher(Log, Dispatcher);
             printerMultiplexer = new PrinterMultiplexer(Log, Dispatcher);
+            fileMover = new FileMover(Log, Dispatcher);
             // TODO Add file mover and completion detection (in the multiplexer module)
 
             folderWatcher.Outputs.SetOutput(FolderWatcher.NextModule, printerMultiplexer);
+            printerMultiplexer.Outputs.SetOutput(PrinterMultiplexer.NextModule, fileMover);
 
             // Initializes some things to use in PrintButton testing.
             ticket = new PrintTicket();
@@ -223,6 +226,16 @@ namespace Printing_Multiplexer
         {
             TextLog.AppendText(text);
             TextLog.AppendText("\n");
+        }
+
+        private void PrintedFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            FolderBrowserDialog folderBrowser = new FolderBrowserDialog();
+            if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                PrintedFolderTextBox.Text = folderBrowser.SelectedPath;
+                fileMover.DestinationFolder = folderBrowser.SelectedPath;
+            }
         }
     }
 }

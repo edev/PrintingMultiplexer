@@ -59,7 +59,22 @@
             <Button Name="PrintButton" 
                     Click="PrintButton_Click" 
                     Content="Test Print" />
-            
+
+            <Separator />
+
+            <!-- FileMover Path -->
+            <Label>
+                Printed Folder
+            </Label>
+            <TextBox Name="PrintedFolderTextBox"
+                     Text="(Choose folder)" 
+                     IsReadOnly="True" />
+            <Button Name="PrintedFolderButton"
+                    Click="PrintedFolderButton_Click">
+                Choose Folder...
+            </Button>
+
+
         </StackPanel>
 
         <GridSplitter Grid.Column="0" 

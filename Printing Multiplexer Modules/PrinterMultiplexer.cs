@@ -16,7 +16,7 @@ namespace Printing_Multiplexer_Modules
 {
     public class PrinterMultiplexer : BasicModule
     {
-        const string NextModule = "NextModule";
+        public const string NextModule = "NextModule";
         const int retryDelayMS = 1000;
 
         // List of printers
@@ -87,6 +87,9 @@ namespace Printing_Multiplexer_Modules
         {
             // Keep trying to print every second until it goes through.
             while (!printers.TryPrint(file)) Thread.Sleep(retryDelayMS);
+
+            // Then give the file to the next module.
+            Outputs.GetOutput(NextModule).Give(file);
         }
 
         /*
