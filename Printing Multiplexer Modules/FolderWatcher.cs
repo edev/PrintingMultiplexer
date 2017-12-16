@@ -16,7 +16,7 @@ namespace Printing_Multiplexer_Modules
         FileSystemWatcher fsw = new FileSystemWatcher();
 
         // Milliseconds to sleep before trying to open a file again.
-        const int threadSleepTime = 10;
+        const int threadSleepTime = 100;
 
         // Creates a new FolderWatcher that doesn't log anywhere.
         public FolderWatcher() { initialize(); }
@@ -63,7 +63,8 @@ namespace Printing_Multiplexer_Modules
             // File's not ready yet. Ignore.
             while (!isFileUnlocked(f))
             {
-                log($"FileSystemWatcher.OnCreated: Ignoring locked file: {e.FullPath}");
+                // This log entry is a partial duplicate with the one in isFileUnlocked. Both are commented because they SPAM LIKE CRAZY when files are transferred from slow media.
+                // log($"FileSystemWatcher.OnCreated: Ignoring locked file: {e.FullPath}");
                 Thread.Sleep(threadSleepTime);
 
                 // TODO Detect issues that aren't going to resolve themselves and cancel. Maybe have isFileUnlocked rethrow if the exception is not an in-use file?
@@ -119,7 +120,9 @@ namespace Printing_Multiplexer_Modules
                 // still being written to
                 // or being processed by another thread
                 // or does not exist (has already been processed).
-                log($"FileSystemWatcher.isFileUnlocked: IOException: {e.Message}");
+
+                // This log message is commented out because it SPAMS LIKE CRAZY when trying to process files being copied from slow media! At 10ms per retry, it actually makes the program unresponsive for minutes afterward. At 100ms retry, it displays potentially tens or hundreds of thousands of messages.
+                // log($"FileSystemWatcher.isFileUnlocked: IOException: {e.Message}");
                 return false;
             }
             finally
