@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Printing_Multiplexer_Modules;
+using System;
 using System.Collections;
 using System.IO;
 using System.Linq;
@@ -9,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -22,6 +24,9 @@ namespace Printing_Multiplexer
     /// </summary>
     public partial class MainWindow : Window
     {
+        FolderWatcher folderWatcher;
+        PrinterMultiplexer printerMultiplexer;
+
         private static readonly string fileToPrint = "2017-09-09 11.13.08.jpg";
 
         private PrintTicket ticket;
@@ -30,18 +35,12 @@ namespace Printing_Multiplexer
         {
             InitializeComponent();
 
-            // Populate initial list of printers.
-            LocalPrintServer pServer = new LocalPrintServer();
-            PrintQueueCollection printers = pServer.GetPrintQueues();
-            // IEnumerator printerEnumerator = localPrinterCollection.GetEnumerator();
 
-            // Lists printers (just their names, no backing data structure)
-            // foreach (PrintQueue q in printers)
-            // {
-            //     ListBoxItem lbi = new ListBoxItem();
-            //     lbi.Content = q.Name;
-            //     PrinterList.Items.Add(lbi);
-            // }
+            folderWatcher = new FolderWatcher(Log, Dispatcher);
+            printerMultiplexer = new PrinterMultiplexer(Log, Dispatcher);
+            // TODO Add file mover and completion detection (in the multiplexer module)
+
+            folderWatcher.Outputs.SetOutput(FolderWatcher.NextModule, printerMultiplexer);
 
             // Initializes some things to use in PrintButton testing.
             ticket = new PrintTicket();
@@ -62,13 +61,18 @@ namespace Printing_Multiplexer
 
             // User clicked OK PrintQueue and PrintTicket are fully set. Add the printer.
             PrinterList.Items.Add(addPrinterDialog.SelectedPrinter);
+            printerMultiplexer.AddPrinter(addPrinterDialog.SelectedPrinter.Printer);
         }
 
         private void RemovePrinterButton_Click(object sender, RoutedEventArgs e)
         {
             int index = PrinterList.SelectedIndex;
+
             // Only remove if we have a selected index. Don't pass garbage on.
             if (index < 0) return;
+
+            // Now actually remove the printer, first from the multiplexer, then from our list.
+            printerMultiplexer.RemovePrinter(((ListBoxPrinter)PrinterList.SelectedItem).Printer);
             PrinterList.Items.RemoveAt(index);
         }
 
@@ -83,15 +87,15 @@ namespace Printing_Multiplexer
             if (printer == null) return false;
 
             // Initialize PrintDialog to use printer's Queue and Ticket
-            PrintDialog pd = new PrintDialog();
-            pd.PrintQueue = printer.Queue;
+            System.Windows.Controls.PrintDialog pd = new System.Windows.Controls.PrintDialog();
+            pd.PrintQueue = printer.Printer.Queue;
             // pd.PrintTicket = printer.Ticket;
             pd.UserPageRangeEnabled = false;
 
             if (pd.ShowDialog() == false) return false;
 
             // TODO FIXME This doesn't check that the printer is actually the same printer! It could be an invalid ticket!
-            printer.Ticket = pd.PrintTicket;
+            printer.Printer.Ticket = pd.PrintTicket;
 
             /*
             printer.Dialog.UserPageRangeEnabled = false;
@@ -130,19 +134,19 @@ namespace Printing_Multiplexer
 
             var vis = new DrawingVisual();
             var dc = vis.RenderOpen();
-            dc.DrawImage(bi, new Rect { Width = (double)((ListBoxPrinter)PrinterList.SelectedItem).Ticket.PageMediaSize.Width, Height = (double)((ListBoxPrinter)PrinterList.SelectedItem).Ticket.PageMediaSize.Height });
+            dc.DrawImage(bi, new Rect { Width = (double)((ListBoxPrinter)PrinterList.SelectedItem).Printer.Ticket.PageMediaSize.Width, Height = (double)((ListBoxPrinter)PrinterList.SelectedItem).Printer.Ticket.PageMediaSize.Height });
             dc.Close();
 
             // Print the file to the selected printer.
-            PrintDialog dialog = new PrintDialog();
-            dialog.PrintQueue = ((ListBoxPrinter)PrinterList.SelectedItem).Queue;
-            dialog.PrintTicket = ((ListBoxPrinter)PrinterList.SelectedItem).Ticket;
+            System.Windows.Controls.PrintDialog dialog = new System.Windows.Controls.PrintDialog();
+            dialog.PrintQueue = ((ListBoxPrinter)PrinterList.SelectedItem).Printer.Queue;
+            dialog.PrintTicket = ((ListBoxPrinter)PrinterList.SelectedItem).Printer.Ticket;
             dialog.PrintVisual(vis, fileToPrint);
             // ((ListBoxPrinter)PrinterList.SelectedItem).Dialog.PrintVisual(vis, fileToPrint);
             // */
         }
 
-        private void printImage(FileInfo source, PrintQueue queue, PrintTicket ticket, PrintDialog dialog)
+        private void printImage(FileInfo source, PrintQueue queue, PrintTicket ticket, System.Windows.Controls.PrintDialog dialog)
         {
             if (source == null || queue == null || ticket == null || dialog == null) return;
 
@@ -203,6 +207,22 @@ namespace Printing_Multiplexer
             }
             SelectedPrinter.PrintVisual(drawVisual, "Print");
             */
+        }
+
+        private void InputFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            FolderBrowserDialog folderBrowser = new FolderBrowserDialog();
+            if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                InputFolderTextBox.Text = folderBrowser.SelectedPath;
+                folderWatcher.SetFolder(folderBrowser.SelectedPath);
+            }
+        }
+
+        public void Log(string text)
+        {
+            TextLog.AppendText(text);
+            TextLog.AppendText("\n");
         }
     }
 }

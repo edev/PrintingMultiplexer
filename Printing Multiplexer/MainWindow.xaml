@@ -13,7 +13,8 @@
         </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
-            <RowDefinition /> <!-- Just one row for now. -->
+            <RowDefinition />
+            <RowDefinition />
         </Grid.RowDefinitions>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto"
@@ -30,6 +31,18 @@
 
         <StackPanel Grid.Column="1"
                     Grid.Row="0">
+
+            <!-- FolderWatcher Path -->
+            <Label>
+                Folder To Watch
+            </Label>
+            <TextBox Name="InputFolderTextBox" 
+                     Text="(Choose folder)" IsReadOnly="True" />
+            <Button Name="InputFolderButton" 
+                    Click="InputFolderButton_Click">
+                Choose Folder...
+            </Button>
+            <Separator />
 
             <Button Name="AddPrinterButton"
                     Click="AddPrinterButton_Click"
@@ -48,5 +61,25 @@
                     Content="Test Print" />
             
         </StackPanel>
+
+        <GridSplitter Grid.Column="0" 
+                      Grid.ColumnSpan="2" 
+                      Grid.Row="0" 
+                      HorizontalAlignment="Stretch" 
+                      VerticalAlignment="Bottom" 
+                      ShowsPreview="True" 
+                      ResizeDirection="Rows" 
+                      Height="4" 
+                      Background="#ccc" />
+
+        <TextBox Grid.Column="0" 
+                 Grid.ColumnSpan="2" 
+                 Grid.Row="1" 
+                 Name="TextLog" 
+                 IsReadOnly="True" 
+                 VerticalScrollBarVisibility="Auto" 
+                 Margin="6"
+                 TextWrapping="Wrap"/>
+
     </Grid>
 </Window>

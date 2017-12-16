@@ -32,8 +32,10 @@
   <ItemGroup>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="ReachFramework" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Printing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -47,8 +49,13 @@
     <Compile Include="FileMover.cs" />
     <Compile Include="FolderWatcher.cs" />
     <Compile Include="ImageReviewer.cs" />
+    <Compile Include="ModelPrintQueueManager.cs" />
     <Compile Include="OutputCollection.cs" />
+    <Compile Include="Printer.cs" />
+    <Compile Include="PrinterMultiplexer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PushedPrintQueue.cs" />
+    <Compile Include="PushyPrintQueue.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
