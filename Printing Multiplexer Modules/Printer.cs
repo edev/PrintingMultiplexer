@@ -17,7 +17,7 @@ namespace Printing_Multiplexer_Modules
     {
         const int sleepMilliseconds = 1000;
         // TODO Find an elegant way to introduce concurrency control around Refresh calls without requiring the user to manage a lock or cloning the queue (which would be very bad).
-        //cprivate SpinLock qLock;
+        // private SpinLock qLock;
         private PrintQueue queue;
         public PrintQueue Queue
         {
@@ -77,24 +77,31 @@ namespace Printing_Multiplexer_Modules
 
             // Borrowed from https://stackoverflow.com/questions/265062/load-image-from-file-and-print-it-using-wpf-how
             // Heavily adapted to crop appropriately.
+            try
+            {
+                var bi = new BitmapImage();
+                bi.BeginInit();
+                bi.CacheOption = BitmapCacheOption.OnLoad;
+                bi.UriSource = new Uri(file.FullName);
+                bi.EndInit();
 
-            var bi = new BitmapImage();
-            bi.BeginInit();
-            bi.CacheOption = BitmapCacheOption.OnLoad;
-            bi.UriSource = new Uri(file.FullName);
-            bi.EndInit();
+                var vis = new DrawingVisual();
+                DrawingContext dc = vis.RenderOpen();
 
-            var vis = new DrawingVisual();
-            DrawingContext dc = vis.RenderOpen();
+                // Basic command to simply stretch and fill the whole page exactly (except maybe losing some pixels if the printer adds borders). This is the basis for our correct version.
+                // dc.DrawImage(bi, new Rect { Width = (double) Ticket.PageMediaSize.Width, Height = (double)Ticket.PageMediaSize.Height });
 
-            // Basic command to simply stretch and fill the whole page exactly (except maybe losing some pixels if the printer adds borders). This is the basis for our correct version.
-            // dc.DrawImage(bi, new Rect { Width = (double) Ticket.PageMediaSize.Width, Height = (double)Ticket.PageMediaSize.Height });
+                drawBitmap(dc, bi);
 
-            drawBitmap(dc, bi);
+                dc.Close();
 
-            dc.Close();
-
-            return vis;
+                return vis;
+            }
+            catch (Exception)
+            {
+                // Note that this is a temporary safety exception catch; in a future revision it should be fleshed out to check for and report specific errors. Also note that no errors are anticipated here.
+                return null;
+            }
         }
 
         private void drawBitmap(DrawingContext context, BitmapSource bitmap)
@@ -107,14 +114,21 @@ namespace Printing_Multiplexer_Modules
             BitmapImage image;
             if(rotate90(Ticket.PageMediaSize, bitmap))
             {
-                // We have a mismatch between the orientations of the paper and the bitmap, so we need to rotate the bitmap 90 degrees to match.
-                TransformedBitmap tb = new TransformedBitmap();
-                tb.BeginInit();
-                tb.Source = bitmap;
-                tb.Transform = new RotateTransform(90D);
-                tb.EndInit();
-                image = new BitmapImage();
-                bitmap = tb; // Orientation of bitmap did NOT swap. (???)
+                try
+                {
+                    // We have a mismatch between the orientations of the paper and the bitmap, so we need to rotate the bitmap 90 degrees to match.
+                    TransformedBitmap tb = new TransformedBitmap();
+                    tb.BeginInit();
+                    tb.Source = bitmap;
+                    tb.Transform = new RotateTransform(90D);
+                    tb.EndInit();
+                    image = new BitmapImage();
+                    bitmap = tb;
+                }
+                catch (Exception)
+                {
+                    // Note taht this is a temporary exception catch; in a future revision it should be fleshed out.
+                }
             }
 
             // Now, calculate the scale factor when scaling to the width of the page and to the height of the page.

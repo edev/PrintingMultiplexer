@@ -226,13 +226,20 @@ namespace Printing_Multiplexer_Modules
 
             private void doPrint(Printer printer, FileInfo file)
             {
+                if (printer == null || file == null) return;
+
                 Visual visual = printer.DrawVisual(file);
                 if (visual == null) return;
 
                 PrintDialog dialog = new PrintDialog();
                 dialog.PrintQueue = printer.Queue;
                 dialog.PrintTicket = printer.Ticket;
-                dialog.PrintVisual(visual, file.Name);
+                try
+                {
+                    dialog.PrintVisual(visual, file.Name);
+                }
+                catch (ArgumentNullException)
+                { }
             }
 
             // Removes from the list the first printer with Count == 0.
@@ -259,8 +266,18 @@ namespace Printing_Multiplexer_Modules
 
             private bool checkIfPrinterIsAvailable(Printer p)
             {
-                p.Queue.Refresh();
-                return (p.Queue.NumberOfJobs == 0);
+                if (p == null) return false;
+
+                try
+                {
+                    p.Queue.Refresh();
+                    return (p.Queue.NumberOfJobs == 0);
+                }
+                catch (PrintSystemException e)
+                {
+                    log($"PrintMultiplexer.checkIfPrinterIsAvailable: Refreshing {p.Queue.Name} raised exception: {e.Message}");
+                    return false;
+                }
             }
 
             private void lockEnter()

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Printing_Multiplexer"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
+        Title="Printer Multiplexer" Height="550" Width="525">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition />
@@ -14,7 +14,7 @@
 
         <Grid.RowDefinitions>
             <RowDefinition />
-            <RowDefinition />
+            <RowDefinition Height="120"/>
         </Grid.RowDefinitions>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto"
@@ -30,7 +30,8 @@
         </ScrollViewer>
 
         <StackPanel Grid.Column="1"
-                    Grid.Row="0">
+                    Grid.Row="0"
+                    VerticalAlignment="Top">
 
             <!-- FolderWatcher Path -->
             <Label>
