@@ -75,7 +75,14 @@
                 Choose Folder...
             </Button>
 
-
+            <!-- Multiplier Actions -->
+            <Label>
+                Copies to Print
+            </Label>
+            <TextBox Name="Copies"
+                     TextChanged="Copies_TextChanged">
+                1
+            </TextBox>
         </StackPanel>
 
         <GridSplitter Grid.Column="0" 

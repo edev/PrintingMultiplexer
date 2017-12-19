@@ -27,6 +27,25 @@ namespace Printing_Multiplexer_Modules
         Queue<FileInfo> files;
         bool taskRunning = false;
 
+        public const int UpperLimit = 10;
+        private int times = 1;
+        public int Times
+        {
+            get { return times; }
+            set
+            {
+                if (value < 0 || value > UpperLimit)
+                {
+                    throw new ArgumentOutOfRangeException("Times", $"Times must be between 0 and {UpperLimit} (inclusive)");
+                }
+                else
+                {
+                    times = value;
+                    log($"PrinterMultiplexer.set_Times: Set Times to {value}");
+                }
+            }
+        }
+
         public PrinterMultiplexer() { initialize(); }
         public PrinterMultiplexer(Logger logger, Dispatcher dispatcher) : base(logger, dispatcher) { initialize(); }
 
@@ -46,7 +65,10 @@ namespace Printing_Multiplexer_Modules
             bool gotLock = false;
             while (!gotLock) qLock.Enter(ref gotLock);
             // Note that we can't enqueue a Visual, because we don't know the printer yet, so we can't render it for the right page size!
-            files.Enqueue(file);
+            for (int i = 0; i < Times; ++i)
+            {
+                files.Enqueue(file);
+            }
             qLock.Exit();
 
             log($"PrinterMultiplexer.Give: Enqueued file {file.FullName}");
@@ -88,8 +110,15 @@ namespace Printing_Multiplexer_Modules
             // Keep trying to print every second until it goes through.
             while (!printers.TryPrint(file)) Thread.Sleep(retryDelayMS);
 
-            // Then give the file to the next module.
-            Outputs.GetOutput(NextModule).Give(file);
+            // Make sure we don't need the file anymore...
+            bool gotLock = false;
+            while (!gotLock) qLock.Enter(ref gotLock);
+            if (!files.Contains(file))
+            {
+                // Then give the file to the next module.
+                Outputs.GetOutput(NextModule).Give(file);
+            }
+            qLock.Exit();
         }
 
         /*

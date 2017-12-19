@@ -1,21 +1,12 @@
 ﻿using Printing_Multiplexer_Modules;
 using System;
-using System.Collections;
 using System.IO;
-using System.Linq;
 using System.Printing;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Forms;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace Printing_Multiplexer
 {
@@ -40,7 +31,7 @@ namespace Printing_Multiplexer
             folderWatcher = new FolderWatcher(Log, Dispatcher);
             printerMultiplexer = new PrinterMultiplexer(Log, Dispatcher);
             fileMover = new FileMover(Log, Dispatcher);
-            // TODO Add file mover and completion detection (in the multiplexer module)
+            // TODO Add completion detection (in the multiplexer module)
 
             folderWatcher.Outputs.SetOutput(FolderWatcher.NextModule, printerMultiplexer);
             printerMultiplexer.Outputs.SetOutput(PrinterMultiplexer.NextModule, fileMover);
@@ -235,6 +226,28 @@ namespace Printing_Multiplexer
             {
                 PrintedFolderTextBox.Text = folderBrowser.SelectedPath;
                 fileMover.DestinationFolder = folderBrowser.SelectedPath;
+            }
+        }
+
+        private void Copies_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            int number;
+            if (int.TryParse(Copies.Text, out number) == false
+                || number < 0)
+            {
+                number = 1;
+                Copies.Text = number.ToString();
+            }
+            if (printerMultiplexer != null)
+            {
+                try
+                {
+                    printerMultiplexer.Times = number;
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    Log($"MainWindow.Copies_TextChanged: printerMultiplexer refused to change Times to {number}");
+                }
             }
         }
     }
