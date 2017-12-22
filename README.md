@@ -42,6 +42,7 @@ _Note: all modules inherit from the BasicModule abstract class._
 - FolderWatcher: uses System.IO.FileSystemWatcher to monitor a folder for new files.
 - ImageReviewer: maintains a queue of files it's given, feeds them as ImageSource objects via ImageReviewer.NextImage, and dispatches them to an Accept or Reject module.
 - FileMover: moves files it's given to a new folder and gives them to the next module.
+- PrinterMultiplexer: manages printers and prints any images it receives using the next available printer, scaling and cropping the images to cover the full page. (Proprietary printer port types like HP auto-configured ports are not currently supported.)
 
 ## Module Wish-List
 
