@@ -4,6 +4,10 @@ This project aims to solve the problem space of reviewing documents and using mu
 
 The motivation behind this project is the annual Christmas dinner for the [Sharing God's Bounty](http://sharinggodsbounty.com) soup kitchen in Sacramento, California. After eating dinner, families line up to take photos with Santa. A team of dedicated volunteers photographs, proofs, prints, and frames photos. The volunteers use multiple printers to keep the line moving as fast as possible, but without using specialized software, it is difficult to manage more than two printers efficiently. Since the workflow is highly repetitive, this project aims to automate it.
 
+## Current Status
+
+The initial deliverables described below are complete and working at the prototype stage. The project debuted successfully at the Bounty Christmas dinner, allowing the team to easily manage 5 printers, recover from printer failures, and deliver 2 prints per family (instead of 1) while completing the event in record time. As an added aside, the team atmosphere went from stressed to relaxed, and everyone spent more time singing along with the carolers than worrying about technical issues, for once! This project is in sleep status until summer of 2018, when it will hopefully move from prototype to initial release.
+
 ## Modular Architecture
 
 Workflows are broken into simple (perhaps atomic) tasks, represented as modules, that accept input in a standard format and define named output hooks (e.g. Accept and Reject, for a review module). When a module receives an object (e.g. a photo), the module sending the object passes responsibility for that object to the receiver.
