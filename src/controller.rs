@@ -91,7 +91,7 @@ impl<JoinHandleType> Controller<JoinHandleType> {
         }
     }
 
-    pub fn run(self) {
+    pub fn run(mut self) {
         // The main controller loop: listen for messages and respond to them.
         loop {
             // Set up a crossbeam select operation to randomly choose from the available messages
@@ -159,11 +159,19 @@ impl<JoinHandleType> Controller<JoinHandleType> {
         println!("Folder watcher thread is closed.");
     }
 
-    fn handle_ui_control_message(&self, message: UIControlMessage) {
+    fn handle_ui_control_message(&mut self, message: UIControlMessage) {
         match message {
             UIControlMessage::Status(message) => self.handle_status_message(message),
             UIControlMessage::AddPrinter => {
-                println!("Adding printer (NYI)");
+                let (to_controller, from_printer) = channel::unbounded();
+                let (to_printer, from_controller) = channel::unbounded();
+                let printer_channels = ChannelPair::new(to_controller, from_controller);
+                let controller_channels = ChannelPair::new(to_printer, from_printer);
+                self.printers.push(Printer {
+                    printer: AutoPrinter::new(printer_channels, self.printer_receiver.clone()),
+                    channels: controller_channels,
+                });
+                println!("Added printer.");
             }
             UIControlMessage::Exit => unreachable!(),
         }
