@@ -15,7 +15,7 @@ pub enum StatusMessage {
 // Control messages that the UI can send to the controller, e.g. to request service.
 pub enum UIControlMessage {
     Status(StatusMessage),
-    WatchFolder(String),
+    Exit,
 }
 
 // A pair of channels for talking to another party.
@@ -26,11 +26,11 @@ pub struct ChannelPair<SenderType, ReceiverType> {
 
 impl<SenderType, ReceiverType> ChannelPair<SenderType, ReceiverType> {
     // A convenience method for easily creating a ChannelPair.
-    pub fn new(sender: channel::Sender<SenderType>, receiver: channel::Receiver<ReceiverType>) -> Self {
-        ChannelPair {
-            sender,
-            receiver,
-        }
+    pub fn new(
+        sender: channel::Sender<SenderType>,
+        receiver: channel::Receiver<ReceiverType>,
+    ) -> Self {
+        ChannelPair { sender, receiver }
     }
 }
 
@@ -70,7 +70,77 @@ impl<JoinHandleType> Controller<JoinHandleType> {
     }
 
     pub fn run(self) {
-        self.ui_handle.join().unwrap();
-        self.folder_watcher_handle.join().unwrap();
+        // The main controller loop: listen for messages and respond to them.
+        loop {
+            // Set up a crossbeam select operation to randomly choose from the available messages
+            // among all receivers or block if there are no pending messages.
+            let mut select = channel::Select::new();
+            let ui_index = select.recv(&self.ui.receiver);
+            let fw_index = select.recv(&self.folder_watcher.receiver);
+            let operation = select.select();
+            match operation.index() {
+                // Receive a message from the UI.
+                i if i == ui_index => {
+                    match operation.recv(&self.ui.receiver) {
+                        // TODO Reconsider all of the logic in this match statement once the system
+                        // is more fully fleshed out. Consider all that's here to be a placeholder,
+                        // including the handler functions.
+                        Ok(message) => {
+                            if let UIControlMessage::Exit = message {
+                                // Close the program gracefully and exit.
+                                self.folder_watcher.sender.send(ControlMessage::Close).ok();
+                                self.ui.sender.send(ControlMessage::Close).ok();
+                                // TODO Determine whether we should clear out any remaining
+                                // messages rather than breaking immediately. (Almost certainly
+                                // yes.)
+                                break;
+                            }
+                            self.handle_ui_control_message(message);
+                        }
+                        Err(_) => {
+                            eprintln!("UI channel disconnected unexpectedly");
+                            break;
+                        }
+                    }
+                }
+
+                // Receive a message from the folder watcher.
+                i if i == fw_index => match operation.recv(&self.folder_watcher.receiver) {
+                    Ok(message) => self.handle_status_message(message),
+                    Err(_) => {
+                        eprintln!("Folder watcher channel disconnected unexpectedly");
+                        break;
+                    }
+                },
+
+                // Uh oh. We somehow received an index that shouldn't have been possible. Bug!
+                i => panic!(
+                    "Controller::run() received an invalid operation index from select: {}",
+                    i
+                ),
+            }
+        }
+
+        // Wait for all threads to complete before exiting.
+        if let Err(message) = self.ui_handle.join() {
+            eprintln!("{:?}", message);
+        }
+        if let Err(message) = self.folder_watcher_handle.join() {
+            eprintln!("{:?}", message);
+        }
+    }
+
+    fn handle_ui_control_message(&self, message: UIControlMessage) {
+        match message {
+            UIControlMessage::Status(message) => self.handle_status_message(message),
+            UIControlMessage::Exit => unreachable!(),
+        }
+    }
+
+    fn handle_status_message(&self, message: StatusMessage) {
+        match message {
+            StatusMessage::Notice(message) => println!("{}", message),
+            StatusMessage::Error(message) => eprintln!("{}", message),
+        }
     }
 }

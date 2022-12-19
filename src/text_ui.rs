@@ -1,4 +1,4 @@
-use crate::controller::{ChannelPair, ControlMessage, UIControlMessage};
+use crate::controller::{ChannelPair, ControlMessage, StatusMessage, UIControlMessage};
 
 // A simple, text-based UI for controlling the printing operation.
 //
@@ -10,11 +10,27 @@ pub struct TextUI {
 
 impl TextUI {
     pub fn new(controller: ChannelPair<UIControlMessage, ControlMessage>) -> Self {
-        TextUI {
-            controller,
-        }
+        TextUI { controller }
     }
 
     pub fn run(&self) {
+        self.controller
+            .sender
+            .send(UIControlMessage::Status(StatusMessage::Notice(
+                "TextUI just popping by.".to_string(),
+            )))
+            .unwrap();
+        self.controller.sender.send(UIControlMessage::Exit).unwrap();
+
+        match self.controller.receiver.recv().unwrap() {
+            ControlMessage::Close => {
+                self.controller
+                    .sender
+                    .send(UIControlMessage::Status(StatusMessage::Notice(
+                        "TextUI gracefully closing".to_string(),
+                    )))
+                    .unwrap();
+            }
+        }
     }
 }

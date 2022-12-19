@@ -18,10 +18,7 @@ impl<T> Channel<T> {
     // A convenience method that creates a channel and stores its components in a struct.
     fn new() -> Self {
         let (sender, receiver) = crossbeam::channel::unbounded();
-        Channel {
-            sender,
-            receiver
-        }
+        Channel { sender, receiver }
     }
 }
 
