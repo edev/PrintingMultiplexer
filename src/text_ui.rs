@@ -14,4 +14,7 @@ impl TextUI {
             controller,
         }
     }
+
+    pub fn run(&self) {
+    }
 }

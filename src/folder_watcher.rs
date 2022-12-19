@@ -11,4 +11,7 @@ impl FolderWatcher {
             controller,
         }
     }
+
+    pub fn run(&self) {
+    }
 }

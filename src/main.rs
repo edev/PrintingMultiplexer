@@ -4,6 +4,7 @@ mod text_ui;
 
 use controller::*;
 use folder_watcher::*;
+use std::thread;
 use text_ui::*;
 
 // Holds a sender and receiver pair for a channel, allowing easier organization within main().
@@ -31,6 +32,9 @@ fn main() {
     let ui_channels = ChannelPair::new(to_controller.sender, from_controller.receiver);
     let controller_ui_channels = ChannelPair::new(from_controller.sender, to_controller.receiver);
     let ui = TextUI::new(ui_channels);
+    let ui_handle = thread::spawn(move || {
+        ui.run();
+    });
 
     // Construct a folder watcher.
     let from_controller = Channel::new();
@@ -38,17 +42,22 @@ fn main() {
     let fw_channels = ChannelPair::new(to_controller.sender, from_controller.receiver);
     let controller_fw_channels = ChannelPair::new(from_controller.sender, to_controller.receiver);
     let folder_watcher = FolderWatcher::new(fw_channels);
+    let fw_handle = thread::spawn(move || {
+        folder_watcher.run();
+    });
 
     // Construct the controller, passing along the collected channels from above.
     let controller = Controller::new(
         controller_ui_channels,
+        ui_handle,
         controller_fw_channels,
+        fw_handle,
     );
-
-    // Start all required threads.
-    // TODO NYI.
+    let controller_handle = thread::spawn(move || {
+        controller.run();
+    });
 
     // Wait for the controller to finish before closing the program. The controller will wait for
     // all other threads.
-    // TODO NYI.
+    controller_handle.join().unwrap();
 }
