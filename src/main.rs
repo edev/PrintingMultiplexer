@@ -51,6 +51,7 @@ fn main() {
     });
 
     // Construct a folder watcher.
+    let print_queue = Channel::new();
     let from_controller = Channel::new();
     let to_controller = Channel::new();
     let fw_channels = ChannelPair::new(to_controller.sender, from_controller.receiver);
@@ -66,6 +67,7 @@ fn main() {
         ui_handle,
         controller_fw_channels,
         fw_handle,
+        print_queue.receiver,
     );
     let controller_handle = thread::spawn(move || {
         controller.run();

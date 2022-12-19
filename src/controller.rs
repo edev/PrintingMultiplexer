@@ -53,6 +53,11 @@ pub struct Controller<JoinHandleType> {
 
     // The handle for the FolderWatcher thread.
     folder_watcher_handle: JoinHandle<JoinHandleType>,
+
+    // The controller's copy of the receiver that AutoPrinters use to pull jobs from the print
+    // queue. The controller should never try to receive from this, but it clones this receiver and
+    // passes the copies to newly created AutPrinters.
+    printer_receiver: channel::Receiver<String>,
 }
 
 impl<JoinHandleType> Controller<JoinHandleType> {
@@ -61,12 +66,14 @@ impl<JoinHandleType> Controller<JoinHandleType> {
         ui_handle: JoinHandle<JoinHandleType>,
         folder_watcher: ChannelPair<ControlMessage, StatusMessage>,
         folder_watcher_handle: JoinHandle<JoinHandleType>,
+        printer_receiver: channel::Receiver<String>,
     ) -> Self {
         Controller {
             ui,
             ui_handle,
             folder_watcher,
             folder_watcher_handle,
+            printer_receiver,
         }
     }
 
