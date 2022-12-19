@@ -4,6 +4,7 @@ mod text_ui;
 
 use controller::*;
 use folder_watcher::*;
+use std::env;
 use std::thread;
 use text_ui::*;
 
@@ -23,6 +24,21 @@ impl<T> Channel<T> {
 }
 
 fn main() {
+    // For the text UI only, we expect the user to pass in the path to the inbox folder as the
+    // first and only argument. We will probably remove this once we have a GUI.
+    let mut args = env::args();
+    if args.len() != 2 {
+        eprintln!(
+            "Error: incorrect arguments.\n\
+            \n\
+            Usage:\n\
+            PrintingMultiplexer.exe <path-to-inbox>\n"
+        );
+        return
+    }
+    let watch_folder = args.nth(1).unwrap();
+    println!("Watch folder: {}", watch_folder);
+
     // Construct the UI.
     let from_controller = Channel::new();
     let to_controller = Channel::new();
@@ -38,7 +54,7 @@ fn main() {
     let to_controller = Channel::new();
     let fw_channels = ChannelPair::new(to_controller.sender, from_controller.receiver);
     let controller_fw_channels = ChannelPair::new(from_controller.sender, to_controller.receiver);
-    let folder_watcher = FolderWatcher::new(fw_channels);
+    let mut folder_watcher = FolderWatcher::new(fw_channels, watch_folder);
     let fw_handle = thread::spawn(move || {
         folder_watcher.run();
     });

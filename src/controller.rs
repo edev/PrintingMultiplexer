@@ -121,13 +121,20 @@ impl<JoinHandleType> Controller<JoinHandleType> {
             }
         }
 
+        drop(self.ui.sender);
+        drop(self.ui.receiver);
+        drop(self.folder_watcher.sender);
+        drop(self.folder_watcher.receiver);
+
         // Wait for all threads to complete before exiting.
         if let Err(message) = self.ui_handle.join() {
             eprintln!("{:?}", message);
         }
+        println!("UI thread is closed.");
         if let Err(message) = self.folder_watcher_handle.join() {
             eprintln!("{:?}", message);
         }
+        println!("Folder watcher thread is closed.");
     }
 
     fn handle_ui_control_message(&self, message: UIControlMessage) {
