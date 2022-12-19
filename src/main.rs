@@ -34,7 +34,7 @@ fn main() {
             Usage:\n\
             PrintingMultiplexer.exe <path-to-inbox>\n"
         );
-        return
+        return;
     }
     let watch_folder = args.nth(1).unwrap();
     println!("Watch folder: {}", watch_folder);

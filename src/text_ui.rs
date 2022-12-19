@@ -32,34 +32,32 @@ impl TextUI {
                     match operation.recv(&stdin) {
                         Ok(line) => {
                             // Process the line that the user entered.
-                            break
-                        },
+                            break;
+                        }
                         Err(_) => {
                             eprintln!("TextUI's stdin channel disconnected unexpectedly");
-                            break
+                            break;
                         }
                     }
-                },
+                }
 
                 // Receive a message from the controller.
-                i if i == controller_index => {
-                    match operation.recv(&self.controller.receiver) {
-                        Ok(message) => match message {
-                            ControlMessage::Close => {
-                                self.controller
-                                    .sender
-                                    .send(UIControlMessage::Status(StatusMessage::Notice(
-                                        "TextUI gracefully closing".to_string(),
-                                    )))
-                                    .unwrap();
-                                break
-                            }
-                        },
-
-                        Err(_) => {
-                            eprintln!("Controller's TextUI channel disconnected unexpectedly");
-                            break
+                i if i == controller_index => match operation.recv(&self.controller.receiver) {
+                    Ok(message) => match message {
+                        ControlMessage::Close => {
+                            self.controller
+                                .sender
+                                .send(UIControlMessage::Status(StatusMessage::Notice(
+                                    "TextUI gracefully closing".to_string(),
+                                )))
+                                .unwrap();
+                            break;
                         }
+                    },
+
+                    Err(_) => {
+                        eprintln!("Controller's TextUI channel disconnected unexpectedly");
+                        break;
                     }
                 },
 
@@ -82,7 +80,9 @@ impl TextUI {
             loop {
                 let mut buffer = String::new();
                 match stdin.read_line(&mut buffer) {
-                    Ok(_) => sender.send(buffer).expect("Stdin reader tried to send text, but the channel was disconnected!"),
+                    Ok(_) => sender.send(buffer).expect(
+                        "Stdin reader tried to send text, but the channel was disconnected!",
+                    ),
                     Err(e) => panic!("{:?}", e),
                 }
             }

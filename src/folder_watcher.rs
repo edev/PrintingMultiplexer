@@ -24,18 +24,34 @@ impl FolderWatcher {
                     // for files to be fully copied before we touch them.
 
                     // Log the event.
-                    sender.send(StatusMessage::Notice(format!("FolderWatcher event: {:?}", event))).unwrap();
-                },
+                    sender
+                        .send(StatusMessage::Notice(format!(
+                            "FolderWatcher event: {:?}",
+                            event
+                        )))
+                        .unwrap();
+                }
                 Err(e) => {
-                    sender.send(StatusMessage::Error(format!("FolderWatcher error: {:?}", e))).unwrap();
+                    sender
+                        .send(StatusMessage::Error(format!(
+                            "FolderWatcher error: {:?}",
+                            e
+                        )))
+                        .unwrap();
                 }
             }
-        }).unwrap();
-        FolderWatcher { controller, folder, watcher }
+        })
+        .unwrap();
+        FolderWatcher {
+            controller,
+            folder,
+            watcher,
+        }
     }
 
     pub fn run(&mut self) {
-        self.watcher.watch(Path::new(&self.folder), notify::RecursiveMode::Recursive);
+        self.watcher
+            .watch(Path::new(&self.folder), notify::RecursiveMode::Recursive);
 
         match self.controller.receiver.recv().unwrap() {
             ControlMessage::Close => {
