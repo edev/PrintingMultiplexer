@@ -1,3 +1,4 @@
+mod auto_printer;
 mod controller;
 mod folder_watcher;
 mod text_ui;
