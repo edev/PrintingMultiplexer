@@ -83,7 +83,7 @@ impl TextUI {
 
                 // Uh oh. We somehow received an index that shouldn't have been possible. Bug!
                 i => panic!(
-                    "Controller::run() received an invalid operation index from select: {}",
+                    "TextUI::run() received an invalid operation index from select: {}",
                     i
                 ),
             }
