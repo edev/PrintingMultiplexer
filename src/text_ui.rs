@@ -17,6 +17,8 @@ impl TextUI {
     }
 
     pub fn run(&self) {
+        self.print_main_menu();
+
         // Start reading stdin in a new thread.
         let stdin = self.read_stdin();
 
@@ -32,7 +34,20 @@ impl TextUI {
                     match operation.recv(&stdin) {
                         Ok(line) => {
                             // Process the line that the user entered.
-                            break;
+                            match line.trim().parse() {
+                                Ok(1) => {
+                                    println!("Adding printers is not yet supported, sorry!\n\n");
+                                }
+                                Ok(2) => {
+                                    println!("Removing printers is not yet supported, sorry!\n\n");
+                                }
+                                Ok(0) => {
+                                    self.controller.sender.send(UIControlMessage::Exit).unwrap();
+                                    break;
+                                }
+                                _ => println!("Invalid input. Please try again.\n\n"),
+                            }
+                            self.print_main_menu();
                         }
                         Err(_) => {
                             eprintln!("TextUI's stdin channel disconnected unexpectedly");
@@ -68,6 +83,18 @@ impl TextUI {
                 ),
             }
         }
+    }
+
+    // Prints the main menu to stdout.
+    fn print_main_menu(&self) {
+        println!(
+            "Main menu:\n\
+            1. Add printer\n\
+            2. Remove printer\n\
+            0. Exit\n\
+            \n\
+            Your choice: "
+        );
     }
 
     // Spawns a new thread that reads from stdin and sends lines a crossbeam::channel::Receiver.
