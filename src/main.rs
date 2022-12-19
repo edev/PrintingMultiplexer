@@ -56,7 +56,7 @@ fn main() {
     let to_controller = Channel::new();
     let fw_channels = ChannelPair::new(to_controller.sender, from_controller.receiver);
     let controller_fw_channels = ChannelPair::new(from_controller.sender, to_controller.receiver);
-    let mut folder_watcher = FolderWatcher::new(fw_channels, watch_folder);
+    let mut folder_watcher = FolderWatcher::new(fw_channels, watch_folder, print_queue.sender);
     let fw_handle = thread::spawn(move || {
         folder_watcher.run();
     });
