@@ -1,6 +1,6 @@
 use crate::auto_printer::AutoPrinter;
 use crossbeam::channel;
-use std::thread::JoinHandle;
+use std::thread::{self, JoinHandle};
 
 // Messages that `Controller` might send out.
 pub enum ControlMessage {
@@ -36,15 +36,6 @@ impl<SenderType, ReceiverType> ChannelPair<SenderType, ReceiverType> {
     }
 }
 
-// This private struct stores associated data that the controller needs for a given p rinter.
-struct Printer {
-    // The printer itself.
-    pub printer: AutoPrinter,
-
-    // The channels for communicating with this specific printer.
-    pub channels: ChannelPair<ControlMessage, StatusMessage>,
-}
-
 // The central hub for all coordination and control between other parts of the program.
 //
 // All control and log messages pass through this struct. Other communication, e.g. the MPMC
@@ -70,7 +61,7 @@ pub struct Controller<JoinHandleType> {
     printer_receiver: channel::Receiver<String>,
 
     // All currently-in-use printers.
-    printers: Vec<Printer>,
+    printers: Vec<ChannelPair<ControlMessage, StatusMessage>>,
 }
 
 impl<JoinHandleType> Controller<JoinHandleType> {
@@ -97,10 +88,36 @@ impl<JoinHandleType> Controller<JoinHandleType> {
             // Set up a crossbeam select operation to randomly choose from the available messages
             // among all receivers or block if there are no pending messages.
             let mut select = channel::Select::new();
+
+            // Put the printers first so that they're indexed from 0.
+            for printer in &self.printers {
+                select.recv(&printer.receiver);
+            };
             let ui_index = select.recv(&self.ui.receiver);
             let fw_index = select.recv(&self.folder_watcher.receiver);
             let operation = select.select();
             match operation.index() {
+                // Receive a message from a printer.
+                i if i < self.printers.len() => {
+                    match operation.recv(&self.printers[i].receiver) {
+                        Ok(message) => self.handle_status_message(message),
+                        Err(_) => {
+                            // The printer's disconnected, so we'll remove it. And just in case the
+                            // printer's still running, we'll ask it to please close.
+                            eprintln!(
+                                "Controller: Printer (index {}) disconnected from controller. \
+                                Removing it.",
+                                i
+                            );
+                            match self.printers[i].sender.try_send(ControlMessage::Close) {
+                                Ok(()) => eprintln!("Controller: sent Close message to printer."),
+                                Err(e) => eprintln!("Controller: error while closing printer: {e}"),
+                            }
+                            self.printers.remove(i);
+                        }
+                    }
+                }
+
                 // Receive a message from the UI.
                 i if i == ui_index => {
                     match operation.recv(&self.ui.receiver) {
@@ -167,10 +184,11 @@ impl<JoinHandleType> Controller<JoinHandleType> {
                 let (to_printer, from_controller) = channel::unbounded();
                 let printer_channels = ChannelPair::new(to_controller, from_controller);
                 let controller_channels = ChannelPair::new(to_printer, from_printer);
-                self.printers.push(Printer {
-                    printer: AutoPrinter::new(printer_channels, self.printer_receiver.clone()),
-                    channels: controller_channels,
-                });
+
+                self.printers.push(controller_channels);
+
+                let printer = AutoPrinter::new(printer_channels, self.printer_receiver.clone());
+                thread::spawn(move || { printer.run() });
                 println!("Added printer.");
             }
             UIControlMessage::Exit => unreachable!(),
