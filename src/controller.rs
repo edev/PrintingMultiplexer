@@ -1,3 +1,4 @@
+use crate::auto_printer::AutoPrinter;
 use crossbeam::channel;
 use std::thread::JoinHandle;
 
@@ -58,6 +59,9 @@ pub struct Controller<JoinHandleType> {
     // queue. The controller should never try to receive from this, but it clones this receiver and
     // passes the copies to newly created AutPrinters.
     printer_receiver: channel::Receiver<String>,
+
+    // All currently-in-use printers.
+    printers: Vec<AutoPrinter>,
 }
 
 impl<JoinHandleType> Controller<JoinHandleType> {
@@ -74,6 +78,7 @@ impl<JoinHandleType> Controller<JoinHandleType> {
             folder_watcher,
             folder_watcher_handle,
             printer_receiver,
+            printers: vec![],
         }
     }
 
