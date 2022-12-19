@@ -1,3 +1,7 @@
+# About this branch
+
+This branch holds the initial prototype and accompanying materials as an archive. It served us well from 2017 through 2019, but as of December 2022 (our first year back after closing in response to the COVID-19 pandemic), at our dry run, it failed to print. This is fine; the prototype was always intended simply to demonstrate what was possible and was designed to be replaced. See the main branch for the current version. The original README appears unmodified below.
+
 # Printing Multiplexer
 
 This project aims to solve the problem space of reviewing documents and using multiple printers to print them. 
