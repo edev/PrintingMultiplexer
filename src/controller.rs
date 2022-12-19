@@ -36,6 +36,15 @@ impl<SenderType, ReceiverType> ChannelPair<SenderType, ReceiverType> {
     }
 }
 
+// This private struct stores associated data that the controller needs for a given p rinter.
+struct Printer {
+    // The printer itself.
+    pub printer: AutoPrinter,
+
+    // The channels for communicating with this specific printer.
+    pub channels: ChannelPair<ControlMessage, StatusMessage>,
+}
+
 // The central hub for all coordination and control between other parts of the program.
 //
 // All control and log messages pass through this struct. Other communication, e.g. the MPMC
@@ -61,7 +70,7 @@ pub struct Controller<JoinHandleType> {
     printer_receiver: channel::Receiver<String>,
 
     // All currently-in-use printers.
-    printers: Vec<AutoPrinter>,
+    printers: Vec<Printer>,
 }
 
 impl<JoinHandleType> Controller<JoinHandleType> {
