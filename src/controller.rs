@@ -15,6 +15,7 @@ pub enum StatusMessage {
 // Control messages that the UI can send to the controller, e.g. to request service.
 pub enum UIControlMessage {
     Status(StatusMessage),
+    AddPrinter,
     Exit,
 }
 
@@ -140,6 +141,9 @@ impl<JoinHandleType> Controller<JoinHandleType> {
     fn handle_ui_control_message(&self, message: UIControlMessage) {
         match message {
             UIControlMessage::Status(message) => self.handle_status_message(message),
+            UIControlMessage::AddPrinter => {
+                println!("Adding printer (NYI)");
+            }
             UIControlMessage::Exit => unreachable!(),
         }
     }

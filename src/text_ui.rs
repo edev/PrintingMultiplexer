@@ -36,7 +36,12 @@ impl TextUI {
                             // Process the line that the user entered.
                             match line.trim().parse() {
                                 Ok(1) => {
-                                    println!("Adding printers is not yet supported, sorry!\n\n");
+                                    // TODO Configure the printer
+                                    // Hand the task off to the controller.
+                                    self.controller
+                                        .sender
+                                        .send(UIControlMessage::AddPrinter)
+                                        .unwrap();
                                 }
                                 Ok(2) => {
                                     println!("Removing printers is not yet supported, sorry!\n\n");
