@@ -42,12 +42,19 @@ impl<SenderType, ReceiverType> ChannelPair<SenderType, ReceiverType> {
 pub struct Controller {
     // Channels for talking to the UI.
     ui: ChannelPair<ControlMessage, UIControlMessage>,
+
+    // Channels for talking to the FolderWatcher.
+    folder_watcher: ChannelPair<ControlMessage, StatusMessage>,
 }
 
 impl Controller {
-    pub fn new(ui: ChannelPair<ControlMessage, UIControlMessage>) -> Self {
+    pub fn new(
+        ui: ChannelPair<ControlMessage, UIControlMessage>,
+        folder_watcher: ChannelPair<ControlMessage, StatusMessage>,
+    ) -> Self {
         Controller {
             ui,
+            folder_watcher,
         }
     }
 }

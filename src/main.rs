@@ -1,7 +1,9 @@
 mod controller;
+mod folder_watcher;
 mod text_ui;
 
 use controller::*;
+use folder_watcher::*;
 use text_ui::*;
 
 // Holds a sender and receiver pair for a channel, allowing easier organization within main().
@@ -31,11 +33,16 @@ fn main() {
     let ui = TextUI::new(ui_channels);
 
     // Construct a folder watcher.
-    // TODO NYI.
+    let from_controller = Channel::new();
+    let to_controller = Channel::new();
+    let fw_channels = ChannelPair::new(to_controller.sender, from_controller.receiver);
+    let controller_fw_channels = ChannelPair::new(from_controller.sender, to_controller.receiver);
+    let folder_watcher = FolderWatcher::new(fw_channels);
 
     // Construct the controller, passing along the collected channels from above.
     let controller = Controller::new(
         controller_ui_channels,
+        controller_fw_channels,
     );
 
     // Start all required threads.
