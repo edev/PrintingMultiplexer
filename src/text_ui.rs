@@ -36,12 +36,18 @@ impl TextUI {
                             // Process the line that the user entered.
                             match line.trim().parse() {
                                 Ok(1) => {
+                                    println!("Please type the EXACT printer name:");
+                                    let name = stdin.recv().unwrap().trim().to_string();
                                     // TODO Configure the printer
                                     // Hand the task off to the controller.
                                     self.controller
                                         .sender
-                                        .send(UIControlMessage::AddPrinter)
+                                        .send(UIControlMessage::AddPrinter(name))
                                         .unwrap();
+                                    println!(
+                                        "\n\nNOTE: This program CANNOT verify that the \
+                                             printer name is correct!\n\n"
+                                    );
                                 }
                                 Ok(2) => {
                                     println!("Removing printers is not yet supported, sorry!\n\n");

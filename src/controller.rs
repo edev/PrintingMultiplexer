@@ -16,7 +16,7 @@ pub enum StatusMessage {
 // Control messages that the UI can send to the controller, e.g. to request service.
 pub enum UIControlMessage {
     Status(StatusMessage),
-    AddPrinter,
+    AddPrinter(String),
     Exit,
 }
 
@@ -92,7 +92,7 @@ impl<JoinHandleType> Controller<JoinHandleType> {
             // Put the printers first so that they're indexed from 0.
             for printer in &self.printers {
                 select.recv(&printer.receiver);
-            };
+            }
             let ui_index = select.recv(&self.ui.receiver);
             let fw_index = select.recv(&self.folder_watcher.receiver);
             let operation = select.select();
@@ -179,7 +179,7 @@ impl<JoinHandleType> Controller<JoinHandleType> {
     fn handle_ui_control_message(&mut self, message: UIControlMessage) {
         match message {
             UIControlMessage::Status(message) => self.handle_status_message(message),
-            UIControlMessage::AddPrinter => {
+            UIControlMessage::AddPrinter(name) => {
                 let (to_controller, from_printer) = channel::unbounded();
                 let (to_printer, from_controller) = channel::unbounded();
                 let printer_channels = ChannelPair::new(to_controller, from_controller);
@@ -187,8 +187,9 @@ impl<JoinHandleType> Controller<JoinHandleType> {
 
                 self.printers.push(controller_channels);
 
-                let printer = AutoPrinter::new(printer_channels, self.printer_receiver.clone());
-                thread::spawn(move || { printer.run() });
+                let printer =
+                    AutoPrinter::new(printer_channels, self.printer_receiver.clone(), name);
+                thread::spawn(move || printer.run());
                 println!("Added printer.");
             }
             UIControlMessage::Exit => unreachable!(),

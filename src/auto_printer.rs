@@ -1,5 +1,6 @@
 use crate::controller::{ChannelPair, ControlMessage, StatusMessage};
 use crossbeam::channel;
+use std::process::Command;
 
 pub struct AutoPrinter {
     // TODO Add a printer name, once we have one. Use it in messages.
@@ -11,16 +12,20 @@ pub struct AutoPrinter {
     // Note that we pass the path to the file rather than, say, a parsed JPEG. This is to free up
     // the folder watcher's thread for speedier operation overall.
     print_queue: channel::Receiver<String>,
+
+    printer_name: String,
 }
 
 impl AutoPrinter {
     pub fn new(
         controller: ChannelPair<StatusMessage, ControlMessage>,
         print_queue: channel::Receiver<String>,
+        printer_name: String,
     ) -> Self {
         AutoPrinter {
             controller,
             print_queue,
+            printer_name,
         }
     }
 
@@ -38,11 +43,11 @@ impl AutoPrinter {
                         self.controller
                             .sender
                             .send(StatusMessage::Notice(format!(
-                                "AutoPrinter picked up file to print: {}",
-                                path
+                                "AutoPrinter \"{}\" picked up file to print: {}",
+                                self.printer_name, path
                             )))
                             .unwrap();
-                        // TODO Actually print the thing.
+                        self.print_to_mspaint(path);
                     }
                     Err(_) => {
                         eprintln!("Print queue senders disconnected unexpectedly");
@@ -76,5 +81,16 @@ impl AutoPrinter {
                 ),
             }
         }
+    }
+
+    // This is a temporary, hackish workaround. We will send the image's path to mspaint.exe with
+    // appropriate options, and it will use the printer's default settings (hopefully). After that,
+    // we will wait 35 seconds.
+    fn print_to_mspaint(&self, image_path: String) {
+        println!("Printing via mspaint: {}", &image_path);
+        Command::new("mspaint")
+            .args(["/p", &image_path, "/pt", &self.printer_name])
+            .status()
+            .ok();
     }
 }
