@@ -63,7 +63,7 @@ impl AutoPrinter {
                                 .send(StatusMessage::Notice(
                                     "AutoPrinter gracefully closing".to_string(),
                                 ))
-                                .unwrap();
+                                .ok();
                             break;
                         }
                     },

@@ -17,6 +17,8 @@ pub enum StatusMessage {
 pub enum UIControlMessage {
     Status(StatusMessage),
     AddPrinter(String),
+    ListPrinters,
+    RemovePrinter(u8),
     Exit,
 }
 
@@ -34,6 +36,12 @@ impl<SenderType, ReceiverType> ChannelPair<SenderType, ReceiverType> {
     ) -> Self {
         ChannelPair { sender, receiver }
     }
+}
+
+// An internal representation of everything the controller knows about a printer.
+struct Printer {
+    channels: ChannelPair<ControlMessage, StatusMessage>,
+    name: String,
 }
 
 // The central hub for all coordination and control between other parts of the program.
@@ -61,7 +69,7 @@ pub struct Controller<JoinHandleType> {
     printer_receiver: channel::Receiver<String>,
 
     // All currently-in-use printers.
-    printers: Vec<ChannelPair<ControlMessage, StatusMessage>>,
+    printers: Vec<Printer>,
 }
 
 impl<JoinHandleType> Controller<JoinHandleType> {
@@ -83,6 +91,7 @@ impl<JoinHandleType> Controller<JoinHandleType> {
     }
 
     pub fn run(mut self) {
+
         // The main controller loop: listen for messages and respond to them.
         loop {
             // Set up a crossbeam select operation to randomly choose from the available messages
@@ -91,7 +100,7 @@ impl<JoinHandleType> Controller<JoinHandleType> {
 
             // Put the printers first so that they're indexed from 0.
             for printer in &self.printers {
-                select.recv(&printer.receiver);
+                select.recv(&printer.channels.receiver);
             }
             let ui_index = select.recv(&self.ui.receiver);
             let fw_index = select.recv(&self.folder_watcher.receiver);
@@ -99,7 +108,7 @@ impl<JoinHandleType> Controller<JoinHandleType> {
             match operation.index() {
                 // Receive a message from a printer.
                 i if i < self.printers.len() => {
-                    match operation.recv(&self.printers[i].receiver) {
+                    match operation.recv(&self.printers[i].channels.receiver) {
                         Ok(message) => self.handle_status_message(message),
                         Err(_) => {
                             // The printer's disconnected, so we'll remove it. And just in case the
@@ -109,7 +118,7 @@ impl<JoinHandleType> Controller<JoinHandleType> {
                                 Removing it.",
                                 i
                             );
-                            match self.printers[i].sender.try_send(ControlMessage::Close) {
+                            match self.printers[i].channels.sender.try_send(ControlMessage::Close) {
                                 Ok(()) => eprintln!("Controller: sent Close message to printer."),
                                 Err(e) => eprintln!("Controller: error while closing printer: {e}"),
                             }
@@ -185,12 +194,26 @@ impl<JoinHandleType> Controller<JoinHandleType> {
                 let printer_channels = ChannelPair::new(to_controller, from_controller);
                 let controller_channels = ChannelPair::new(to_printer, from_printer);
 
-                self.printers.push(controller_channels);
+                let printer = Printer {
+                    channels: controller_channels,
+                    name: name.clone(),
+                };
+                self.printers.push(printer);
 
                 let printer =
                     AutoPrinter::new(printer_channels, self.printer_receiver.clone(), name);
                 thread::spawn(move || printer.run());
                 println!("Added printer.");
+            }
+            UIControlMessage::ListPrinters => {
+                for (u, printer) in self.printers.iter().enumerate() {
+                    println!("{}. {}", u, printer.name);
+                }
+            }
+            UIControlMessage::RemovePrinter(u) => {
+                let printer = self.printers.remove(u.into());
+                println!("Controller: removing printer \"{}\"", printer.name);
+                printer.channels.sender.send(ControlMessage::Close).ok();
             }
             UIControlMessage::Exit => unreachable!(),
         }

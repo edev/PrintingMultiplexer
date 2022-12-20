@@ -50,7 +50,20 @@ impl TextUI {
                                     );
                                 }
                                 Ok(2) => {
-                                    println!("Removing printers is not yet supported, sorry!\n\n");
+                                    println!("Please choose a number from the list below.\n\
+                                             To cancel, simply press Enter.");
+                                    self.controller
+                                        .sender
+                                        .send(UIControlMessage::ListPrinters)
+                                        .unwrap();
+                                    if let Ok(u) = stdin.recv().unwrap().trim().parse() {
+                                        self.controller
+                                            .sender
+                                            .send(UIControlMessage::RemovePrinter(u))
+                                            .unwrap();
+                                    } else {
+                                        println!("Ignoring.");
+                                    }
                                 }
                                 Ok(0) => {
                                     self.controller.sender.send(UIControlMessage::Exit).unwrap();
