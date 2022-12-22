@@ -307,7 +307,11 @@ impl<JoinHandleType> Controller<JoinHandleType> {
                 }
             }
             UIControlMessage::RemovePrinter(u) => {
-                let printer = self.printers.remove(u.into());
+                let u = u.into();
+                if u >= self.printers.len() {
+                    return;
+                }
+                let printer = self.printers.remove(u);
                 self.log.log(LogMessage::Notice {
                     origin: origin(),
                     message: format!("Removing printer \"{}\"", printer.name),
