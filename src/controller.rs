@@ -1,4 +1,5 @@
 use crate::auto_printer::AutoPrinter;
+use crate::logger::{Log, LogMessage};
 use crossbeam::channel;
 use std::thread::{self, JoinHandle};
 
@@ -7,15 +8,18 @@ pub enum ControlMessage {
     Close,
 }
 
-// Generic status messages anyone might send to the controller.
-pub enum StatusMessage {
-    Notice(String),
-    Error(String),
+// Messages that an AutoPrinter can send (to a Controller).
+pub enum PrinterMessage {
+    // Nothing here yet.
+}
+
+// Messages that a FolderWatcher can send (to a Controller).
+pub enum FolderWatcherMessage {
+    // Nothing here yet.
 }
 
 // Control messages that the UI can send to the controller, e.g. to request service.
 pub enum UIControlMessage {
-    Status(StatusMessage),
     AddPrinter(String),
     ListPrinters,
     RemovePrinter(u8),
@@ -40,8 +44,17 @@ impl<SenderType, ReceiverType> ChannelPair<SenderType, ReceiverType> {
 
 // An internal representation of everything the controller knows about a printer.
 struct Printer {
-    channels: ChannelPair<ControlMessage, StatusMessage>,
+    channels: ChannelPair<ControlMessage, PrinterMessage>,
     name: String,
+}
+
+// Helper to generate origin fields for various LogMessage values. Normally, this would be an
+// associated method, but with Controller, this causes problems due to partial moves as we
+// shut down the program.
+//
+// TODO Revisit making origin() an associated function after reviewing the shutdown process.
+fn origin() -> String {
+    "Controller".to_string()
 }
 
 // The central hub for all coordination and control between other parts of the program.
@@ -58,7 +71,7 @@ pub struct Controller<JoinHandleType> {
     ui_handle: JoinHandle<JoinHandleType>,
 
     // Channels for talking to the FolderWatcher.
-    folder_watcher: ChannelPair<ControlMessage, StatusMessage>,
+    folder_watcher: ChannelPair<ControlMessage, FolderWatcherMessage>,
 
     // The handle for the FolderWatcher thread.
     folder_watcher_handle: JoinHandle<JoinHandleType>,
@@ -70,15 +83,36 @@ pub struct Controller<JoinHandleType> {
 
     // All currently-in-use printers.
     printers: Vec<Printer>,
+
+    // The control channel for talking to the program's logger. Unlike other modules, this is
+    // one-way communication: the logger never communicates back to the rest of the program.
+    //
+    // Note that this is NOT the logging channel.
+    logger: channel::Sender<ControlMessage>,
+
+    // The program's log. Send log entries here.
+    log: channel::Sender<LogMessage>,
+
+    // The handle for the Logger thread.
+    logger_handle: JoinHandle<JoinHandleType>,
 }
 
 impl<JoinHandleType> Controller<JoinHandleType> {
+    // I don't see any better alternative to using all of these arguments. Therefore, I've silenced
+    // Clippy on the matter. Structs for ui, folder_watcher, and logger arguments, for instance,
+    // would complicate the calling process without much gain: aside from the handles, every other
+    // argument (at time of writing) has unique types, so it's impossible to mix up most arguments.
+    // Furthermore, arguments with the same types aren't next to one another.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         ui: ChannelPair<ControlMessage, UIControlMessage>,
         ui_handle: JoinHandle<JoinHandleType>,
-        folder_watcher: ChannelPair<ControlMessage, StatusMessage>,
+        folder_watcher: ChannelPair<ControlMessage, FolderWatcherMessage>,
         folder_watcher_handle: JoinHandle<JoinHandleType>,
         printer_receiver: channel::Receiver<String>,
+        logger: channel::Sender<ControlMessage>,
+        log: channel::Sender<LogMessage>,
+        logger_handle: JoinHandle<JoinHandleType>,
     ) -> Self {
         Controller {
             ui,
@@ -87,11 +121,13 @@ impl<JoinHandleType> Controller<JoinHandleType> {
             folder_watcher_handle,
             printer_receiver,
             printers: vec![],
+            logger,
+            log,
+            logger_handle,
         }
     }
 
     pub fn run(mut self) {
-
         // The main controller loop: listen for messages and respond to them.
         loop {
             // Set up a crossbeam select operation to randomly choose from the available messages
@@ -109,18 +145,36 @@ impl<JoinHandleType> Controller<JoinHandleType> {
                 // Receive a message from a printer.
                 i if i < self.printers.len() => {
                     match operation.recv(&self.printers[i].channels.receiver) {
-                        Ok(message) => self.handle_status_message(message),
+                        Ok(_) => {
+                            // Do something once we have printer status messages.
+                        }
                         Err(_) => {
                             // The printer's disconnected, so we'll remove it. And just in case the
                             // printer's still running, we'll ask it to please close.
-                            eprintln!(
-                                "Controller: Printer (index {}) disconnected from controller. \
-                                Removing it.",
-                                i
-                            );
-                            match self.printers[i].channels.sender.try_send(ControlMessage::Close) {
-                                Ok(()) => eprintln!("Controller: sent Close message to printer."),
-                                Err(e) => eprintln!("Controller: error while closing printer: {e}"),
+                            self.log.log(LogMessage::Disconnected {
+                                origin: origin(),
+                                channel: self.printers[i].name.clone(),
+                            });
+                            match self.printers[i]
+                                .channels
+                                .sender
+                                .try_send(ControlMessage::Close)
+                            {
+                                Ok(()) => self.log.log(LogMessage::Notice {
+                                    origin: origin(),
+                                    message: format!(
+                                        "Sent Close message to disconnected printer \"{}\".",
+                                        self.printers[i].name,
+                                    ),
+                                }),
+                                Err(e) => self.log.log(LogMessage::Error {
+                                    origin: origin(),
+                                    message: format!(
+                                        "Failed to send Close message to disconnected printer \
+                                        \"{}\": {}",
+                                        self.printers[i].name, e,
+                                    ),
+                                }),
                             }
                             self.printers.remove(i);
                         }
@@ -146,7 +200,10 @@ impl<JoinHandleType> Controller<JoinHandleType> {
                             self.handle_ui_control_message(message);
                         }
                         Err(_) => {
-                            eprintln!("UI channel disconnected unexpectedly");
+                            self.log.log(LogMessage::Disconnected {
+                                origin: origin(),
+                                channel: "ui".to_string(),
+                            });
                             break;
                         }
                     }
@@ -154,9 +211,14 @@ impl<JoinHandleType> Controller<JoinHandleType> {
 
                 // Receive a message from the folder watcher.
                 i if i == fw_index => match operation.recv(&self.folder_watcher.receiver) {
-                    Ok(message) => self.handle_status_message(message),
+                    Ok(_) => {
+                        // Do something once we have folder watcher messages.
+                    }
                     Err(_) => {
-                        eprintln!("Folder watcher channel disconnected unexpectedly");
+                        self.log.log(LogMessage::Disconnected {
+                            origin: origin(),
+                            channel: "folder_watcher".to_string(),
+                        });
                         break;
                     }
                 },
@@ -169,60 +231,90 @@ impl<JoinHandleType> Controller<JoinHandleType> {
             }
         }
 
+        // TODO Review, improve, and refactor the shutdown sequence.
         drop(self.ui.sender);
         drop(self.ui.receiver);
         drop(self.folder_watcher.sender);
         drop(self.folder_watcher.receiver);
 
         // Wait for all threads to complete before exiting.
-        if let Err(message) = self.ui_handle.join() {
-            eprintln!("{:?}", message);
+        if let Err(code) = self.ui_handle.join() {
+            self.log.log(LogMessage::Error {
+                origin: origin(),
+                message: format!("UI thread panicked with code {:?}", code),
+            });
         }
-        println!("UI thread is closed.");
-        if let Err(message) = self.folder_watcher_handle.join() {
-            eprintln!("{:?}", message);
+        self.log.log(LogMessage::Notice {
+            origin: origin(),
+            message: "UI thread closed without errors".to_string(),
+        });
+        if let Err(code) = self.folder_watcher_handle.join() {
+            self.log.log(LogMessage::Error {
+                origin: origin(),
+                message: format!("FolderWatcher thread panicked with code {:?}", code),
+            });
         }
-        println!("Folder watcher thread is closed.");
+        self.log.log(LogMessage::Notice {
+            origin: origin(),
+            message: "FolderWatcher thread closed without errors".to_string(),
+        });
+
+        // TODO Add a goodbye/end log message. Be careful to block but not to panic in case the
+        // logger is disconnected.
+
+        // Now we can close the logger.
+        match self.logger.try_send(ControlMessage::Close) {
+            Ok(()) => {
+                if let Err(code) = self.logger_handle.join() {
+                    eprintln!("Logger thread panicked with code: {:?}", code);
+                }
+            }
+            Err(_) => eprintln!("Tried to close logger gracefully, but it was disconnected."),
+        }
     }
 
     fn handle_ui_control_message(&mut self, message: UIControlMessage) {
         match message {
-            UIControlMessage::Status(message) => self.handle_status_message(message),
             UIControlMessage::AddPrinter(name) => {
                 let (to_controller, from_printer) = channel::unbounded();
                 let (to_printer, from_controller) = channel::unbounded();
                 let printer_channels = ChannelPair::new(to_controller, from_controller);
                 let controller_channels = ChannelPair::new(to_printer, from_printer);
 
+                self.log.log(LogMessage::Notice {
+                    origin: origin(),
+                    message: format!("Adding printer: \"{}\"", name),
+                });
                 let printer = Printer {
                     channels: controller_channels,
                     name: name.clone(),
                 };
                 self.printers.push(printer);
 
-                let printer =
-                    AutoPrinter::new(printer_channels, self.printer_receiver.clone(), name);
+                let printer = AutoPrinter::new(
+                    printer_channels,
+                    self.printer_receiver.clone(),
+                    name,
+                    self.log.clone(),
+                );
                 thread::spawn(move || printer.run());
-                println!("Added printer.");
             }
             UIControlMessage::ListPrinters => {
                 for (u, printer) in self.printers.iter().enumerate() {
+                    // TODO Return a list of printer names via a message rather than printing. This
+                    // makes it UI-agnostic.
                     println!("{}. {}", u, printer.name);
                 }
             }
             UIControlMessage::RemovePrinter(u) => {
                 let printer = self.printers.remove(u.into());
-                println!("Controller: removing printer \"{}\"", printer.name);
+                self.log.log(LogMessage::Notice {
+                    origin: origin(),
+                    message: format!("Removing printer \"{}\"", printer.name),
+                });
                 printer.channels.sender.send(ControlMessage::Close).ok();
             }
             UIControlMessage::Exit => unreachable!(),
-        }
-    }
-
-    fn handle_status_message(&self, message: StatusMessage) {
-        match message {
-            StatusMessage::Notice(message) => println!("{}", message),
-            StatusMessage::Error(message) => eprintln!("{}", message),
         }
     }
 }

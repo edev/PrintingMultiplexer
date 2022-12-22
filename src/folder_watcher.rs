@@ -1,27 +1,38 @@
-use crate::controller::{ChannelPair, ControlMessage, StatusMessage};
+use crate::controller::{ChannelPair, ControlMessage, FolderWatcherMessage};
+use crate::logger::{Log, LogMessage};
 use crossbeam::channel;
 use notify::event::{Event, EventKind};
 use notify::Watcher;
 use std::path::Path;
 
+// Helper to generate origin fields for various LogMessage values. Normally, this would be an
+// associated method, but with the move closure that actually watches folders, there is no self.
+fn origin() -> String {
+    "FolderWatcher".to_string()
+}
+
 pub struct FolderWatcher {
     // The lines of communication to and from the controller.
-    controller: ChannelPair<StatusMessage, ControlMessage>,
+    controller: ChannelPair<FolderWatcherMessage, ControlMessage>,
 
     // The path to the folder to watch, as a string.
     folder: String,
 
     watcher: notify::RecommendedWatcher,
+
+    // The program's log. Send log entries here.
+    log: channel::Sender<LogMessage>,
 }
 
 impl FolderWatcher {
     pub fn new(
-        controller: ChannelPair<StatusMessage, ControlMessage>,
+        controller: ChannelPair<FolderWatcherMessage, ControlMessage>,
         folder: String,
         print_queue: channel::Sender<String>,
+        log: channel::Sender<LogMessage>,
     ) -> Self {
         // Configure an event handler for a notify::Watcher. We'll keep it and use it elsewhere.
-        let to_controller = controller.sender.clone();
+        let to_logger = log.clone();
         let watcher = notify::recommended_watcher(move |result: Result<Event, notify::Error>| {
             match result {
                 Ok(event) => {
@@ -30,12 +41,10 @@ impl FolderWatcher {
                     // for files to be fully copied before we touch them.
 
                     // Log the event.
-                    to_controller
-                        .send(StatusMessage::Notice(format!(
-                            "FolderWatcher event: {:?}",
-                            event
-                        )))
-                        .unwrap();
+                    to_logger.log(LogMessage::Notice {
+                        origin: origin(),
+                        message: format!("{:?}", event),
+                    });
 
                     // Add newly created images to print queue.
                     // We use _ instead of CreateKind because the value isn't fully consistent in
@@ -47,13 +56,15 @@ impl FolderWatcher {
                                 let path = match path.to_str() {
                                     Some(path) => path,
                                     None => {
-                                        to_controller
-                                            .send(StatusMessage::Notice(
-                                                "FolderWatcher: converting path to a Unicode string failed. Skipping."
-                                                .to_string()
-                                            ))
+                                        to_logger
+                                            .send(LogMessage::Error {
+                                                origin: origin(),
+                                                message: "Converting path to a Unicode string \
+                                                    failed. Skipping."
+                                                    .to_string(),
+                                            })
                                             .unwrap();
-                                        return
+                                        return;
                                     }
                                 };
 
@@ -62,39 +73,31 @@ impl FolderWatcher {
                                     || lowercase_path.ends_with(".jpeg")
                                 {
                                     print_queue.send(path.to_string()).unwrap();
-                                    to_controller
-                                        .send(StatusMessage::Notice(format!(
-                                            "FolderWatcher: added image to print queue: {}",
-                                            path
-                                        )))
-                                        .unwrap();
+                                    to_logger.log(LogMessage::Notice {
+                                        origin: origin(),
+                                        message: format!("Added image to print queue: {}", path),
+                                    });
                                 } else {
-                                    to_controller
-                                        .send(StatusMessage::Notice(format!(
-                                            "FolderWatcher: ignoring non-JPEG file: {}",
-                                            path
-                                        )))
-                                        .unwrap();
+                                    to_logger.log(LogMessage::Notice {
+                                        origin: origin(),
+                                        message: format!("Ignoring non-JPEG file: {}", path),
+                                    });
                                 }
                             }
                             None => {
-                                to_controller
-                                    .send(StatusMessage::Notice(
-                                        "FolderWatcher: Create event had no paths! Skipping."
-                                            .to_string(),
-                                    ))
-                                    .unwrap();
+                                to_logger.log(LogMessage::Notice {
+                                    origin: origin(),
+                                    message: "Create event had no paths! Skipping.".to_string(),
+                                });
                             }
                         }
                     }
                 }
                 Err(e) => {
-                    to_controller
-                        .send(StatusMessage::Error(format!(
-                            "FolderWatcher error: {:?}",
-                            e
-                        )))
-                        .unwrap();
+                    to_logger.log(LogMessage::Error {
+                        origin: origin(),
+                        message: format!("handle_event returned an error: {e}"),
+                    });
                 }
             }
         })
@@ -103,22 +106,43 @@ impl FolderWatcher {
             controller,
             folder,
             watcher,
+            log,
         }
     }
 
     pub fn run(&mut self) {
-        self.watcher
+        // Start the folder watcher.
+        let result = self
+            .watcher
             .watch(Path::new(&self.folder), notify::RecursiveMode::Recursive);
+        if let Err(e) = result {
+            // Couldn't start watching. Log the error and exit.
+            self.log.log(LogMessage::Error {
+                origin: origin(),
+                message: format!("Exiting due to error: {e}"),
+            });
+            return;
+        }
 
-        match self.controller.receiver.recv().unwrap() {
-            ControlMessage::Close => {
-                self.controller
-                    .sender
-                    .send(StatusMessage::Notice(
-                        "FolderWatcher gracefully closing".to_string(),
-                    ))
-                    .unwrap();
+        // Start listening for Controller messages.
+        // TODO Remove this clippy annocation once there's at least one non-exiting match arm.
+        #[allow(clippy::never_loop)]
+        loop {
+            match self.controller.receiver.recv().unwrap() {
+                ControlMessage::Close => {
+                    self.log.log(LogMessage::Closing { origin: origin() });
+                    break;
+                }
             }
+        }
+
+        // Once it's time to stop, end the watch.
+        let result = self.watcher.unwatch(Path::new(&self.folder));
+        if let Err(e) = result {
+            self.log.log(LogMessage::Error {
+                origin: origin(),
+                message: format!("Could not unwatch {}: {}", self.folder, e),
+            });
         }
     }
 }

@@ -1,4 +1,5 @@
-use crate::controller::{ChannelPair, ControlMessage, StatusMessage, UIControlMessage};
+use crate::controller::{ChannelPair, ControlMessage, UIControlMessage};
+use crate::logger::{Log, LogMessage};
 use crossbeam::channel;
 use std::io;
 use std::thread;
@@ -9,11 +10,17 @@ use std::thread;
 pub struct TextUI {
     // The lines of communication to and from the controller.
     controller: ChannelPair<UIControlMessage, ControlMessage>,
+
+    // The program's log. Send log entries here.
+    log: channel::Sender<LogMessage>,
 }
 
 impl TextUI {
-    pub fn new(controller: ChannelPair<UIControlMessage, ControlMessage>) -> Self {
-        TextUI { controller }
+    pub fn new(
+        controller: ChannelPair<UIControlMessage, ControlMessage>,
+        log: channel::Sender<LogMessage>,
+    ) -> Self {
+        TextUI { controller, log }
     }
 
     pub fn run(&self) {
@@ -50,8 +57,10 @@ impl TextUI {
                                     );
                                 }
                                 Ok(2) => {
-                                    println!("Please choose a number from the list below.\n\
-                                             To cancel, simply press Enter.");
+                                    println!(
+                                        "Please choose a number from the list below.\n\
+                                        To cancel, simply press Enter."
+                                    );
                                     self.controller
                                         .sender
                                         .send(UIControlMessage::ListPrinters)
@@ -74,7 +83,10 @@ impl TextUI {
                             self.print_main_menu();
                         }
                         Err(_) => {
-                            eprintln!("TextUI's stdin channel disconnected unexpectedly");
+                            self.log.log(LogMessage::Disconnected {
+                                origin: self.origin(),
+                                channel: "stdin".to_string(),
+                            });
                             break;
                         }
                     }
@@ -84,12 +96,9 @@ impl TextUI {
                 i if i == controller_index => match operation.recv(&self.controller.receiver) {
                     Ok(message) => match message {
                         ControlMessage::Close => {
-                            self.controller
-                                .sender
-                                .send(UIControlMessage::Status(StatusMessage::Notice(
-                                    "TextUI gracefully closing".to_string(),
-                                )))
-                                .unwrap();
+                            self.log.log(LogMessage::Closing {
+                                origin: self.origin(),
+                            });
                             break;
                         }
                     },
@@ -139,5 +148,9 @@ impl TextUI {
             }
         });
         receiver
+    }
+
+    fn origin(&self) -> String {
+        "TextUI".to_string()
     }
 }
